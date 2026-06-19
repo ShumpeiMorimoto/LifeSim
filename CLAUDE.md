@@ -54,6 +54,16 @@ uv run ty check src           # type check
 # サーバー実装後: uv run uvicorn main:app --reload --app-dir src
 ```
 
+## 後で追加する足回り（deferred infra）
+
+設計フェーズでは不要なため未導入。必要フェーズで SmartQ からコピー or 新規作成する:
+
+- **code-review-expert スキル** (`SmartQ/.claude/skills/`) — コードレビュー用。実装が始まればいつでも
+- **デプロイ設定**: `Dockerfile` / `render.yaml` / `.dockerignore` — STEP 10 リリース時
+- **CI**: `.github/workflows/` — テストが揃ったら
+- **`start.bat`** — サーバー実装後（`uv run uvicorn ...`）
+- **`.mcp.json`** — Render MCP を使うなら。⚠️ SmartQのものは**APIトークン直書き＝コピー不可**。必ず自分のトークンで新規作成
+
 ## 担当区分（ドキュメント共通の凡例）
 
 - 🧑‍🎨 開発者のみ（トーン・ゲーム性・面白さの判断）
