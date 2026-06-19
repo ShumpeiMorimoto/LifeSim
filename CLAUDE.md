@@ -43,7 +43,16 @@ Fallen London / StoryNexus 由来。リファレンス分析は `dev-docs/LIFE_S
 
 ## 技術スタック
 
-未確定（設計フェーズ）。STEP 5 で決定。テキスト主体のため現状の有力案はWeb（軽量・URL即入室）。リアルタイム基盤（部屋/WS/ターン同期）はマルチ交差レイヤーでのみ必要で、必要になればSmartQのパターンをコピーする。
+**暫定: SmartQと同じ Python(FastAPI) + 素のJS スタック**（uv / ruff / ty / pytest）。設計フェーズなのでアプリコードはまだ無いが、リポジトリの足回りは整備済み。STEP 5 で正式決定（変更可）。テキスト主体のためWeb（軽量・URL即入室）が有力。リアルタイム基盤（部屋/WS/ターン同期）はマルチ交差レイヤーでのみ必要で、その時SmartQのパターンをコピーする。実行時にOpenAIは使わない（`openai`依存を入れていないのは意図的）。
+
+## Commands
+
+```bash
+uv run pytest -v              # tests（test作成後）
+uv run ruff check .           # lint（ruff line-length=100）
+uv run ty check src           # type check
+# サーバー実装後: uv run uvicorn main:app --reload --app-dir src
+```
 
 ## 担当区分（ドキュメント共通の凡例）
 

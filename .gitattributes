@@ -1,0 +1,12 @@
+# Normalize line endings (LF) for text; treat assets as binary.
+* text=auto eol=lf
+
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.webp binary
+*.gif  binary
+*.ico  binary
+*.mp3  binary
+*.wav  binary
+*.ogg  binary
