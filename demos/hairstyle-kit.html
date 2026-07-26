@@ -1,0 +1,587 @@
+<title>LifeSim — 髪型キットと描き込みの段階</title>
+
+<style>
+:root{
+  --ground:#f5f2f0; --card:#ffffff; --ink:#1a1520; --ink-2:#665d70;
+  --ink-3:#9a91a4; --line:#e4dedd; --accent:#a9691f; --accent-soft:#f0e2cd;
+  --mono:"SFMono-Regular",Consolas,"Liberation Mono",monospace;
+  --gothic:"Yu Gothic UI","Yu Gothic","Hiragino Sans","Noto Sans JP",system-ui,sans-serif;
+  --mincho:"Yu Mincho","YuMincho","Hiragino Mincho ProN","Noto Serif JP",serif;
+}
+@media (prefers-color-scheme: dark){
+  :root{ --ground:#121016; --card:#1a1620; --ink:#ece7f1; --ink-2:#9b93a6;
+    --ink-3:#6d6579; --line:#2b2534; --accent:#dda352; --accent-soft:#33291c; }
+}
+:root[data-theme="dark"]{ --ground:#121016; --card:#1a1620; --ink:#ece7f1; --ink-2:#9b93a6;
+  --ink-3:#6d6579; --line:#2b2534; --accent:#dda352; --accent-soft:#33291c; }
+:root[data-theme="light"]{ --ground:#f5f2f0; --card:#ffffff; --ink:#1a1520; --ink-2:#665d70;
+  --ink-3:#9a91a4; --line:#e4dedd; --accent:#a9691f; --accent-soft:#f0e2cd; }
+
+*{box-sizing:border-box}
+body{margin:0; background:var(--ground); color:var(--ink); font-family:var(--gothic);
+  line-height:1.75; -webkit-font-smoothing:antialiased}
+.wrap{max-width:1160px; margin:0 auto; padding:clamp(28px,5vw,64px) clamp(18px,4vw,40px) 96px;
+  display:flex; flex-direction:column; gap:clamp(30px,5vw,54px)}
+
+.masthead{display:flex; flex-direction:column; gap:10px}
+.eyebrow{margin:0; font-size:11.5px; letter-spacing:.22em; text-transform:uppercase;
+  color:var(--ink-3); font-weight:600}
+h1{margin:0; font-family:var(--mincho); font-weight:600; font-size:clamp(28px,4.4vw,44px);
+  line-height:1.25; letter-spacing:.02em; text-wrap:balance}
+.lede{margin:0; color:var(--ink-2); font-size:clamp(14px,1.6vw,16.5px); max-width:62ch}
+.lede b{color:var(--ink); font-weight:600}
+
+section{display:flex; flex-direction:column; gap:clamp(14px,2vw,20px)}
+h2{margin:0; font-family:var(--mincho); font-size:clamp(19px,2.3vw,24px); font-weight:600;
+  letter-spacing:.02em}
+.q{margin:0; font-size:14px; color:var(--ink-2); max-width:64ch}
+.q b{color:var(--ink); font-weight:600}
+.shead{display:flex; flex-direction:column; gap:6px}
+
+/* ギャラリー */
+.gal{display:grid; gap:12px; grid-template-columns:repeat(auto-fit,minmax(130px,1fr))}
+.cell{background:#100d15; border:1px solid rgba(255,255,255,.06); border-radius:5px;
+  overflow:hidden; display:flex; flex-direction:column}
+.cell .art{position:relative; aspect-ratio:1/1.12}
+.cell .art svg{position:absolute; inset:0; width:100%; height:100%}
+.cell .halo{position:absolute; inset:0;
+  background:radial-gradient(70% 56% at 50% 60%, rgba(232,168,102,.11), transparent 72%)}
+.cell .cap{padding:8px 11px 10px; background:#0c0a10;
+  border-top:1px solid rgba(255,255,255,.07); display:flex; flex-direction:column; gap:1px}
+.cell .nm{font-size:12.5px; color:#efe9f2; letter-spacing:.05em}
+.cell .ns{font-size:10.5px; color:#847c90; font-family:var(--mono)}
+
+/* 段階比較 */
+.steps{display:grid; gap:14px; grid-template-columns:repeat(auto-fit,minmax(190px,1fr))}
+.step{background:#0e0b13; border:1px solid rgba(255,255,255,.07); border-radius:5px;
+  overflow:hidden; display:flex; flex-direction:column}
+.step.pick{border-color:rgba(221,163,82,.55); box-shadow:0 0 0 1px rgba(221,163,82,.28)}
+.step .art{position:relative; aspect-ratio:1/1.15}
+.step .art svg{position:absolute; inset:0; width:100%; height:100%}
+.step .bg{position:absolute; inset:0;
+  background:radial-gradient(72% 60% at 50% 58%, #241a2a, #0b070f 78%)}
+.step .cap{padding:13px 15px 16px; background:#0a0810;
+  border-top:1px solid rgba(255,255,255,.07); display:flex; flex-direction:column; gap:5px}
+.step .lv{font-size:11px; letter-spacing:.2em; color:#dda352; font-family:var(--mono)}
+.step .nm{font-size:14px; color:#f0eaf3; letter-spacing:.04em}
+.step .d{font-size:12.5px; color:#8f8799; line-height:1.65}
+
+/* 組み立て */
+.lab{display:grid; gap:20px; grid-template-columns:minmax(220px,300px) 1fr; align-items:start}
+@media (max-width:720px){ .lab{grid-template-columns:1fr} }
+.preview{background:#0e0b13; border:1px solid rgba(255,255,255,.07); border-radius:5px;
+  position:relative; aspect-ratio:1/1.15; overflow:hidden}
+.preview .bg{position:absolute; inset:0;
+  background:radial-gradient(72% 60% at 50% 58%, #241a2a, #0b070f 78%)}
+.preview svg{position:absolute; inset:0; width:100%; height:100%}
+.panel{display:flex; flex-direction:column; gap:16px}
+.row{display:flex; flex-direction:column; gap:8px}
+.row > label{font-size:11.5px; letter-spacing:.16em; color:var(--ink-3); text-transform:uppercase}
+.chips{display:flex; flex-wrap:wrap; gap:7px}
+.chip{appearance:none; font:inherit; font-size:13px; padding:7px 13px; cursor:pointer;
+  background:var(--card); color:var(--ink-2); border:1px solid var(--line); border-radius:3px;
+  letter-spacing:.04em; transition:border-color .18s, color .18s, background .18s}
+.chip:hover{border-color:var(--accent); color:var(--ink)}
+.chip[aria-pressed="true"]{background:var(--accent); border-color:var(--accent); color:#fff;
+  font-weight:600}
+.chip:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+.sw{width:34px; height:34px; padding:0; border-radius:50%; border:2px solid var(--line);
+  cursor:pointer; transition:transform .16s, border-color .18s}
+.sw:hover{transform:scale(1.09)}
+.sw[aria-pressed="true"]{border-color:var(--accent); transform:scale(1.09)}
+.sw:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+.spec{font-family:var(--mono); font-size:12px; color:var(--ink-2); background:var(--accent-soft);
+  border-radius:3px; padding:11px 13px; line-height:1.7; overflow-x:auto; white-space:pre}
+
+/* notes */
+.notes{display:grid; gap:clamp(18px,2.4vw,26px); grid-template-columns:repeat(auto-fit,minmax(266px,1fr))}
+.note{background:var(--card); border:1px solid var(--line); border-radius:4px;
+  padding:22px 24px 24px; display:flex; flex-direction:column; gap:11px}
+.note h3{margin:0; font-size:11.5px; letter-spacing:.2em; text-transform:uppercase;
+  color:var(--accent); font-weight:700}
+.note p{margin:0; font-size:14px; color:var(--ink-2); line-height:1.85}
+.note p b{color:var(--ink); font-weight:600}
+.note ul{margin:0; padding-left:0; list-style:none; display:flex; flex-direction:column; gap:7px}
+.note li{font-size:13.5px; color:var(--ink-2); display:flex; gap:10px; line-height:1.6}
+.note li::before{content:""; flex:none; width:5px; height:5px; border-radius:50%;
+  background:var(--accent); opacity:.55; margin-top:9px}
+.note li b{color:var(--ink); font-weight:600}
+code{font-family:var(--mono); font-size:.88em; background:var(--accent-soft);
+  padding:1.5px 5px; border-radius:2px; color:var(--ink)}
+.foot{font-size:12.5px; color:var(--ink-3); border-top:1px solid var(--line); padding-top:18px}
+
+@media (prefers-reduced-motion: reduce){ *{transition-duration:.01ms !important} }
+</style>
+
+<div class="wrap">
+
+  <header class="masthead">
+    <p class="eyebrow">LifeSim ／ 演出試作 その3 ／ 2026-07-27</p>
+    <h1>髪型キットと、描き込みの段階</h1>
+    <p class="lede">「金髪のツインテールに髪飾り」は作れるか——答えは作れる。ただし<b>髪に色を入れた瞬間、顔がないことが目立ちはじめる</b>。どこまで描き込むかは技術の問題ではなく、そこの見極めの問題なので、段階を並べて比べられるようにした。</p>
+  </header>
+
+  <section>
+    <div class="shead">
+      <h2>その一　髪型は増やせる</h2>
+      <p class="q">12種。ツインテール・ポニーテール・三つ編み・お団子・姫カットまで、全部SVGのパスで書いてある。<b>1種あたり15行程度</b>で、増やすコストはここだけに乗る。</p>
+    </div>
+    <div class="gal" id="gal"></div>
+  </section>
+
+  <section>
+    <div class="shead">
+      <h2>その二　髪飾りも付く</h2>
+      <p class="q">リボン・カチューシャ・ヘアピン・シュシュ・花。<b>髪型ごとに結び目の座標を持たせてある</b>ので、どの髪型に何を付けても位置が合う。組み合わせは12×6で72通り、実装は18個。</p>
+    </div>
+    <div class="gal" id="orn"></div>
+  </section>
+
+  <section>
+    <div class="shead">
+      <h2>その三　どこまで描き込むか（本題）</h2>
+      <p class="q">同じ人物——金髪ツインテールに赤いリボン——を4段階で。左から右へ具体的になるほど、<b>顔がないことの居心地が悪くなっていく</b>のが見えるはず。3枚目あたりで「これは未完成の絵だ」に転ぶ。その手前が線引き。</p>
+    </div>
+    <div class="steps" id="steps"></div>
+  </section>
+
+  <section>
+    <div class="shead">
+      <h2>その四　組み合わせて試す</h2>
+      <p class="q">好きに変えて、破綻する組み合わせを探してみてほしい。下に出るのがstoryletから見た指定——<b>これだけ書けばこの絵になる</b>。</p>
+    </div>
+    <div class="lab">
+      <div class="preview" id="preview"><div class="bg"></div></div>
+      <div class="panel">
+        <div class="row"><label>髪型</label><div class="chips" id="cHair"></div></div>
+        <div class="row"><label>髪の色</label><div class="chips" id="cColor"></div></div>
+        <div class="row"><label>髪飾り</label><div class="chips" id="cOrn"></div></div>
+        <div class="row"><label>描き込み</label><div class="chips" id="cLevel"></div></div>
+        <div class="spec" id="spec"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="notes">
+    <div class="note">
+      <h3>わかったこと</h3>
+      <p>髪型・髪飾り・髪色は<b>いくらでも具体的にできる</b>。技術的な壁はここにはない。</p>
+      <p>壁があるのは<b>顔</b>のほう。全身が影なら顔がないのは様式だが、髪が金色に光った瞬間「この絵には顔があるはずだ」と目が期待しはじめる。<b>破綻するのは色の有無ではなく、期待と実物のずれ</b>。</p>
+    </div>
+    <div class="note">
+      <h3>トーンの話（技術とは別）</h3>
+      <p>金髪ツインテールが作れることと、<b>この作品に合うかは別</b>。現代日本・等身大／シリアス7:ユーモア3という骨格からすると、病室や同窓会の場面に立たせたときに浮く可能性がある。</p>
+      <p>ただし<b>内輪ネタ枠（6-5）なら話が変わる</b>。友達を模したキャラを差し込む機構では、むしろ特徴が立っているほうが刺さる。「本筋は抑えめ、内輪ネタ枠は自由」という切り分けはありうる。</p>
+    </div>
+    <div class="note">
+      <h3>いま決めること／決めなくていいこと</h3>
+      <ul>
+        <li><b>決める</b> — 本筋NPCをどの段階で出すか（1〜4のどれか）</li>
+        <li><b>決めなくていい</b> — 髪型を何種類そろえるか。あとからいくらでも足せる</li>
+        <li><b>決めなくていい</b> — 手描きに移行するか。この層は差し替え可能で、状態モデルもstoryletも影響を受けない</li>
+      </ul>
+    </div>
+  </section>
+
+  <p class="foot">画像ファイル不使用。髪も飾りも影も、すべて実行時にパスを組み立てて描いている。</p>
+
+</div>
+
+<script>
+"use strict";
+
+/* ============================================================
+   髪型キット
+   back = 頭より奥／front = 頭より手前／tie = 髪飾りの取付点
+   ============================================================ */
+
+const HAIR = {
+
+  twin: { name:'ツインテール', id:'twin', build(x,y,v){
+    const w = 1 + v*.25;
+    const tail = s => `M ${x+s*40} ${y-32}
+      C ${x+s*80} ${y-26} ${x+s*(100*w)} ${y+30} ${x+s*(94*w)} ${y+94}
+      C ${x+s*(90*w)} ${y+130} ${x+s*74} ${y+150} ${x+s*56} ${y+142}
+      C ${x+s*74} ${y+118} ${x+s*78} ${y+68} ${x+s*60} ${y+24}
+      C ${x+s*50} ${y} ${x+s*40} ${y-14} ${x+s*40} ${y-32} Z`;
+    return {
+      back:[tail(-1), tail(1)],
+      front:[`M ${x-56} ${y+16} C ${x-62} ${y-36} ${x-38} ${y-76} ${x} ${y-76}
+        C ${x+38} ${y-76} ${x+62} ${y-36} ${x+56} ${y+16}
+        L ${x+43} ${y-4} L ${x+25} ${y+9} L ${x+7} ${y-6}
+        L ${x-13} ${y+9} L ${x-33} ${y-4} L ${x-47} ${y+11} Z`],
+      tie:[[x-49,y-24],[x+49,y-24]],
+    };
+  }},
+
+  ponytail: { name:'ポニーテール', id:'ponytail', build(x,y,v){
+    return {
+      back:[`M ${x+30} ${y-52}
+        C ${x+76} ${y-46} ${x+96} ${y+6} ${x+88} ${y+72}
+        C ${x+83} ${y+112} ${x+66} ${y+134} ${x+48} ${y+126}
+        C ${x+68} ${y+100} ${x+70} ${y+50} ${x+52} ${y+8}
+        C ${x+44} ${y-14} ${x+34} ${y-34} ${x+30} ${y-52} Z`],
+      front:[`M ${x-54} ${y+12} C ${x-60} ${y-38} ${x-36} ${y-74} ${x} ${y-74}
+        C ${x+40} ${y-74} ${x+62} ${y-46} ${x+54} ${y-8}
+        L ${x+38} ${y-22} C ${x+26} ${y-38} ${x-16} ${y-40} ${x-34} ${y-18}
+        L ${x-44} ${y+12} Z`],
+      tie:[[x+38,y-48]],
+    };
+  }},
+
+  braid: { name:'三つ編み', id:'braid', build(x,y,v){
+    const seg = s => {
+      let d = '';
+      for (let i = 0; i < 6; i++){
+        const by = y - 4 + i*26, bx = x + s*(52 + i*3), tilt = (i%2 ? 22 : -22);
+        d += `<ellipse cx="${bx}" cy="${by}" rx="19" ry="14"
+               transform="rotate(${tilt} ${bx} ${by})"/>`;
+      }
+      return d;
+    };
+    return {
+      back:[], backRaw: seg(-1) + seg(1),
+      front:[`M ${x-55} ${y+14} C ${x-60} ${y-36} ${x-37} ${y-74} ${x} ${y-74}
+        C ${x+37} ${y-74} ${x+60} ${y-36} ${x+55} ${y+14}
+        L ${x+40} ${y-6} L ${x} ${y+4} L ${x-40} ${y-6} Z`],
+      tie:[[x-53,y-2],[x+53,y-2]],
+    };
+  }},
+
+  bun: { name:'お団子', id:'bun', build(x,y,v){
+    return {
+      back:[], backRaw:`<circle cx="${x}" cy="${y-88}" r="${30+v*5}"/>`,
+      front:[`M ${x-53} ${y+12} C ${x-59} ${y-38} ${x-36} ${y-72} ${x} ${y-72}
+        C ${x+36} ${y-72} ${x+59} ${y-38} ${x+53} ${y+12}
+        L ${x+38} ${y-8} C ${x+30} ${y-26} ${x-30} ${y-26} ${x-38} ${y-8} Z`],
+      tie:[[x,y-58]],
+    };
+  }},
+
+  hime: { name:'姫カット', id:'hime', build(x,y,v){
+    return {
+      back:[`M ${x-60} ${y+190} C ${x-72} ${y+80} ${x-66} ${y-26} ${x} ${y-72}
+        C ${x+66} ${y-26} ${x+72} ${y+80} ${x+60} ${y+190}
+        C ${x+40} ${y+150} ${x+44} ${y-4} ${x} ${y-24}
+        C ${x-44} ${y-4} ${x-40} ${y+150} ${x-60} ${y+190} Z`],
+      front:[`M ${x-56} ${y+14} C ${x-60} ${y-38} ${x-37} ${y-74} ${x} ${y-74}
+        C ${x+37} ${y-74} ${x+60} ${y-38} ${x+56} ${y+14}
+        L ${x+56} ${y+52} L ${x+36} ${y+52} L ${x+38} ${y-6}
+        L ${x-38} ${y-6} L ${x-36} ${y+52} L ${x-56} ${y+52} Z`],
+      tie:[[x-50,y-34],[x+50,y-34]],
+    };
+  }},
+
+  wavy: { name:'ロングウェーブ', id:'wavy', build(x,y,v){
+    return {
+      back:[`M ${x-58} ${y+196}
+        C ${x-86} ${y+150} ${x-58} ${y+112} ${x-76} ${y+62}
+        C ${x-90} ${y+18} ${x-70} ${y-34} ${x} ${y-70}
+        C ${x+70} ${y-34} ${x+90} ${y+18} ${x+76} ${y+62}
+        C ${x+58} ${y+112} ${x+86} ${y+150} ${x+58} ${y+196}
+        C ${x+36} ${y+140} ${x+50} ${y+40} ${x} ${y-24}
+        C ${x-50} ${y+40} ${x-36} ${y+140} ${x-58} ${y+196} Z`],
+      front:[`M ${x-55} ${y+10} C ${x-60} ${y-38} ${x-36} ${y-72} ${x} ${y-72}
+        C ${x+36} ${y-72} ${x+60} ${y-38} ${x+55} ${y+10}
+        L ${x+34} ${y-14} C ${x+18} ${y-32} ${x-24} ${y-30} ${x-40} ${y-6} Z`],
+      tie:[[x+48,y-40]],
+    };
+  }},
+
+  sidetail: { name:'サイドテール', id:'sidetail', build(x,y,v){
+    return {
+      back:[`M ${x-42} ${y-16}
+        C ${x-84} ${y-4} ${x-100} ${y+56} ${x-88} ${y+116}
+        C ${x-82} ${y+148} ${x-66} ${y+162} ${x-50} ${y+152}
+        C ${x-68} ${y+126} ${x-70} ${y+72} ${x-54} ${y+30}
+        C ${x-46} ${y+8} ${x-40} ${y-2} ${x-42} ${y-16} Z`],
+      front:[`M ${x-54} ${y+6} C ${x-60} ${y-40} ${x-36} ${y-74} ${x} ${y-74}
+        C ${x+38} ${y-74} ${x+58} ${y-34} ${x+54} ${y+14}
+        L ${x+38} ${y-10} C ${x+22} ${y-34} ${x-22} ${y-32} ${x-42} ${y-6} Z`],
+      tie:[[x-50,y-10]],
+    };
+  }},
+
+  bob: { name:'ボブ', id:'bob', build(x,y,v){
+    return {
+      back:[`M ${x-58} ${y+50} C ${x-66} ${y-16} ${x-46} ${y-72} ${x} ${y-72}
+        C ${x+46} ${y-72} ${x+66} ${y-16} ${x+58} ${y+50}
+        C ${x+46} ${y+18} ${x+48} ${y-26} ${x} ${y-28}
+        C ${x-48} ${y-26} ${x-46} ${y+18} ${x-58} ${y+50} Z`],
+      front:[`M ${x-56} ${y+2} C ${x-58} ${y-40} ${x-36} ${y-72} ${x} ${y-72}
+        C ${x+36} ${y-72} ${x+58} ${y-40} ${x+56} ${y+2}
+        L ${x+36} ${y-16} C ${x+16} ${y-32} ${x-20} ${y-30} ${x-38} ${y-8} Z`],
+      tie:[[x-50,y-30],[x+50,y-30]],
+    };
+  }},
+
+  short: { name:'ショート', id:'short', build(x,y,v){
+    return {
+      back:[],
+      front:[`M ${x-54} ${y+2} C ${x-58} ${y-40} ${x-34} ${y-72} ${x} ${y-72}
+        C ${x+34} ${y-72} ${x+58} ${y-40} ${x+54} ${y+2}
+        L ${x+40} ${y-16} L ${x+18} ${y-6} L ${x-4} ${y-18}
+        L ${x-26} ${y-6} L ${x-40} ${y-18} Z`],
+      tie:[[x+48,y-40]],
+    };
+  }},
+
+  messy: { name:'くせ毛ショート', id:'messy', build(x,y,v){
+    let pk = '';
+    const n = 7, w = 56;
+    for (let i = 0; i <= n; i++){
+      const px = x - w + (2*w)*(i/n);
+      const base = y - 54 + Math.pow((px-x)/w, 2)*24;
+      pk += `L ${px-5} ${base} L ${px+1} ${base - (11 + (i%3)*9)*(0.7+v*0.4)} `;
+    }
+    return {
+      back:[],
+      front:[`M ${x-58} ${y+8} L ${x-58} ${y-30} ${pk} L ${x+58} ${y-30} L ${x+58} ${y+8}
+        C ${x+46} ${y-16} ${x+38} ${y-26} ${x} ${y-27}
+        C ${x-38} ${y-26} ${x-46} ${y-16} ${x-58} ${y+8} Z`],
+      tie:[[x+50,y-38]],
+    };
+  }},
+
+  slick: { name:'撫でつけ', id:'slick', build(x,y,v){
+    return {
+      back:[],
+      front:[`M ${x-54} ${y+14} L ${x-58} ${y-34} L ${x-16} ${y-66}
+        L ${x+58} ${y-48} L ${x+54} ${y+6}
+        C ${x+44} ${y-18} ${x+30} ${y-30} ${x-4} ${y-30}
+        C ${x-34} ${y-29} ${x-46} ${y-14} ${x-54} ${y+14} Z`],
+      tie:[[x+46,y-44]],
+    };
+  }},
+
+  thin: { name:'薄毛', id:'thin', build(x,y,v){
+    const r = 22 - v*10;
+    return {
+      back:[],
+      front:[`M ${x-50} ${y-4} C ${x-54} ${y-40} ${x-32} ${y-58} ${x} ${y-56}
+        C ${x+32} ${y-58} ${x+54} ${y-40} ${x+50} ${y-4}
+        C ${x+44} ${y-24} ${x+r+8} ${y-31} ${x} ${y-30}
+        C ${x-r-8} ${y-31} ${x-44} ${y-24} ${x-50} ${y-4} Z`],
+      tie:[[x+46,y-30]],
+    };
+  }},
+};
+
+/* ============================================================
+   髪飾り — 髪型が持つ tie 座標に取り付く
+   ============================================================ */
+
+const ORN = {
+  none:   { name:'なし', draw: () => '' },
+
+  ribbon: { name:'リボン', draw(p, c){ return p.map(([px,py]) => `
+    <g fill="${c}">
+      <path d="M ${px} ${py} L ${px-25} ${py-15} C ${px-31} ${py-4} ${px-31} ${py+8} ${px-25} ${py+17} Z"/>
+      <path d="M ${px} ${py} L ${px+25} ${py-15} C ${px+31} ${py-4} ${px+31} ${py+8} ${px+25} ${py+17} Z"/>
+      <ellipse cx="${px}" cy="${py}" rx="6.5" ry="7.5"/>
+    </g>`).join(''); }},
+
+  clip:   { name:'ヘアピン', draw(p, c){ return p.map(([px,py]) => `
+    <g stroke="${c}" stroke-width="5" stroke-linecap="round">
+      <line x1="${px-14}" y1="${py-9}" x2="${px+13}" y2="${py+8}"/>
+      <line x1="${px-13}" y1="${py+8}" x2="${px+14}" y2="${py-9}"/>
+    </g>`).join(''); }},
+
+  scrunchie:{ name:'シュシュ', draw(p, c){ return p.map(([px,py]) => `
+    <ellipse cx="${px}" cy="${py}" rx="17" ry="12" fill="${c}"/>
+    <ellipse cx="${px}" cy="${py}" rx="8" ry="5" fill="#0b0810" opacity=".45"/>`).join(''); }},
+
+  flower: { name:'花', draw(p, c){ return p.map(([px,py]) => {
+    let f = '';
+    for (let i = 0; i < 5; i++){
+      const a = (i/5)*Math.PI*2 - Math.PI/2;
+      f += `<ellipse cx="${(px+Math.cos(a)*11).toFixed(1)}" cy="${(py+Math.sin(a)*11).toFixed(1)}"
+             rx="8.5" ry="7" fill="${c}"/>`;
+    }
+    return f + `<circle cx="${px}" cy="${py}" r="5" fill="#fff3d0" opacity=".85"/>`;
+  }).join(''); }},
+
+  /* カチューシャだけは tie でなく頭の弧に沿う */
+  band:   { name:'カチューシャ', headArc:true, draw(p, c, x, y){ return `
+    <path d="M ${x-53} ${y-6} C ${x-56} ${y-46} ${x-32} ${y-68} ${x} ${y-68}
+      C ${x+32} ${y-68} ${x+56} ${y-46} ${x+53} ${y-6}"
+      fill="none" stroke="${c}" stroke-width="8" stroke-linecap="round"/>`; }},
+};
+
+/* ============================================================
+   髪の色
+   ============================================================ */
+
+const HCOLOR = {
+  blonde: { name:'金',   base:'#d9b25f', lit:'#f4e0a4' },
+  black:  { name:'黒',   base:'#26232f', lit:'#4e4a5f' },
+  brown:  { name:'茶',   base:'#5f4230', lit:'#8d6647' },
+  ash:    { name:'亜麻', base:'#a99a89', lit:'#d3c8b9' },
+  red:    { name:'赤',   base:'#8f4234', lit:'#c06a4c' },
+  silver: { name:'銀',   base:'#a8b0bc', lit:'#dfe5ec' },
+};
+
+const SKIN = { base:'#8a6553', lit:'#b28770' };
+const CLOTH = '#221f2b';
+
+/* ============================================================
+   胸像 — level が描き込みの段階
+   ============================================================ */
+
+let UID = 0;
+const CX = 150, HY = 150;
+
+function figure(o){
+  const lv    = o.level ?? 'sil';                 // sil | hair | skin | face
+  const hair  = HAIR[o.hair] || HAIR.short;
+  const col   = HCOLOR[o.color] || HCOLOR.black;
+  const orn   = ORN[o.orn] || ORN.none;
+  const ornC  = o.ornColor || '#c8474b';
+  const rim   = o.rim || '#e8a866';
+  const uid   = ++UID;
+  const parts = hair.build(CX, HY, o.vol ?? 1);
+
+  const body = `M ${CX-124} 400 C ${CX-124} 306 ${CX-74} 228 ${CX-29} 220
+    L ${CX+29} 220 C ${CX+74} 228 ${CX+124} 306 ${CX+124} 400 Z`;
+  const neck = `<rect x="${CX-18}" y="${HY+38}" width="36" height="44" rx="4"/>`;
+  const head = `<ellipse cx="${CX}" cy="${HY}" rx="50" ry="58"/>`;
+
+  const back  = parts.back.map(d => `<path d="${d}"/>`).join('') + (parts.backRaw || '');
+  const front = parts.front.map(d => `<path d="${d}"/>`).join('');
+
+  /* 段階ごとの塗り分け */
+  const dark = '#0c0912';
+  const hairFill = (lv === 'sil') ? dark : `url(#hg${uid})`;
+  const skinFill = (lv === 'skin' || lv === 'face') ? `url(#sg${uid})` : dark;
+  const bodyFill = (lv === 'skin' || lv === 'face') ? CLOTH : dark;
+
+  /* 顔（最終段階のみ）— これ以上は手描きの領域 */
+  const face = (lv === 'face') ? `
+    <g fill="#1b1420">
+      <ellipse cx="${CX-19}" cy="${HY+4}" rx="6.5" ry="8"/>
+      <ellipse cx="${CX+19}" cy="${HY+4}" rx="6.5" ry="8"/>
+    </g>
+    <g stroke="#1b1420" stroke-width="3" stroke-linecap="round" fill="none" opacity=".75">
+      <path d="M ${CX-27} ${HY-9} Q ${CX-19} ${HY-13} ${CX-11} ${HY-9}"/>
+      <path d="M ${CX+11} ${HY-9} Q ${CX+19} ${HY-13} ${CX+27} ${HY-9}"/>
+      <path d="M ${CX-7} ${HY+30} Q ${CX} ${HY+34} ${CX+7} ${HY+30}"/>
+    </g>` : '';
+
+  const ornPts = orn.headArc ? [] : (parts.tie || []);
+  const ornSvg = orn.headArc ? orn.draw(null, ornC, CX, HY) : orn.draw(ornPts, ornC);
+
+  /* 全体の縁光。シルエット段階ほど強く効かせる */
+  const rimA = lv === 'sil' ? .55 : lv === 'hair' ? .34 : .2;
+  const silhouette = `${back}<path d="${body}"/>${neck}${head}${front}`;
+
+  return `<svg viewBox="0 0 300 400" preserveAspectRatio="xMidYMax meet">
+    <defs>
+      <linearGradient id="hg${uid}" x1="0" y1="0" x2=".3" y2="1">
+        <stop offset="0" stop-color="${col.lit}"/>
+        <stop offset=".55" stop-color="${col.base}"/>
+        <stop offset="1" stop-color="${shade(col.base, .52)}"/>
+      </linearGradient>
+      <linearGradient id="sg${uid}" x1=".2" y1="0" x2=".7" y2="1">
+        <stop offset="0" stop-color="${SKIN.lit}"/>
+        <stop offset="1" stop-color="${shade(SKIN.base, .62)}"/>
+      </linearGradient>
+      <filter id="gl${uid}" x="-50%" y="-50%" width="200%" height="200%">
+        <feGaussianBlur stdDeviation="10"/></filter>
+    </defs>
+
+    <g transform="translate(7,-6)" fill="${rim}" opacity="${rimA}" filter="url(#gl${uid})">
+      ${silhouette}</g>
+    <g transform="translate(5,-4)" fill="${rim}" opacity="${(rimA*.85).toFixed(2)}">
+      ${silhouette}</g>
+
+    <g fill="${hairFill}">${back}</g>
+    <path d="${body}" fill="${bodyFill}"/>
+    <g fill="${skinFill}">${neck}${head}</g>
+    ${face}
+    <g fill="${hairFill}">${front}</g>
+    ${ornSvg}
+  </svg>`;
+}
+
+function shade(hex, k){
+  const [r,g,b] = [1,3,5].map(i => parseInt(hex.slice(i, i+2), 16));
+  return `#${[r,g,b].map(c => Math.round(c*k).toString(16).padStart(2,'0')).join('')}`;
+}
+
+/* ============================================================
+   描画
+   ============================================================ */
+
+const $ = id => document.getElementById(id);
+
+/* その一 — 髪型ギャラリー */
+$('gal').innerHTML = Object.values(HAIR).map(h => `
+  <div class="cell"><div class="art"><div class="halo"></div>
+    ${figure({ hair:h.id, level:'sil' })}
+  </div><div class="cap"><span class="nm">${h.name}</span><span class="ns">${h.id}</span></div></div>
+`).join('');
+
+/* その二 — 髪飾り */
+const ORN_DEMO = [
+  ['twin','ribbon','ツインテール＋リボン'],
+  ['ponytail','scrunchie','ポニーテール＋シュシュ'],
+  ['bob','band','ボブ＋カチューシャ'],
+  ['hime','flower','姫カット＋花'],
+  ['short','clip','ショート＋ヘアピン'],
+  ['braid','ribbon','三つ編み＋リボン'],
+];
+$('orn').innerHTML = ORN_DEMO.map(([h,o,label]) => `
+  <div class="cell"><div class="art"><div class="halo"></div>
+    ${figure({ hair:h, orn:o, level:'sil', ornColor:'#d4696b' })}
+  </div><div class="cap"><span class="nm">${label}</span>
+  <span class="ns">${h} + ${o}</span></div></div>
+`).join('');
+
+/* その三 — 描き込みの段階 */
+const STEPS = [
+  { lv:'sil',  n:'影だけ', d:'全部が影。顔がないのは様式として通る。今の方針。' },
+  { lv:'hair', n:'髪に光', d:'髪だけ光が当たる。金髪も髪飾りも読める。顔はまだ影のうち。' },
+  { lv:'skin', n:'髪と肌', d:'肌が出た瞬間、のっぺらぼうが気になりはじめる。ここが分かれ目。' },
+  { lv:'face', n:'顔を描く', d:'描けはする。ただし全員が似た顔になり、キャラの描き分けは手描きの仕事になる。', crude:true },
+];
+$('steps').innerHTML = STEPS.map((s, i) => `
+  <div class="step${i === 1 ? ' pick' : ''}">
+    <div class="art"><div class="bg"></div>
+      ${figure({ hair:'twin', color:'blonde', orn:'ribbon', ornColor:'#c8474b', level:s.lv })}
+    </div>
+    <div class="cap"><span class="lv">段階 ${i+1}</span><span class="nm">${s.n}</span>
+      <span class="d">${s.d}</span></div>
+  </div>`).join('');
+
+/* その四 — 組み立て */
+const state = { hair:'twin', color:'blonde', orn:'ribbon', level:'hair' };
+
+function chips(host, items, key, render){
+  $(host).innerHTML = items.map(([v, label, style]) =>
+    `<button class="chip${style ? ' sw' : ''}" data-v="${v}"
+      ${style ? `style="${style}"` : ''} title="${label}"
+      aria-pressed="${state[key] === v}">${style ? '' : label}</button>`).join('');
+  $(host).querySelectorAll('button').forEach(b =>
+    b.addEventListener('click', () => { state[key] = b.dataset.v; paint(); }));
+}
+
+function paint(){
+  $('preview').innerHTML = '<div class="bg"></div>' + figure({
+    hair:state.hair, color:state.color, orn:state.orn,
+    ornColor:'#c8474b', level:state.level,
+  });
+  $('spec').textContent =
+`"portrait": {
+  "hair":     "${state.hair}",
+  "color":    "${state.color}",
+  "ornament": "${state.orn}",
+  "detail":   "${state.level}"
+}`;
+  chips('cHair',  Object.values(HAIR).map(h => [h.id, h.name]), 'hair');
+  chips('cColor', Object.entries(HCOLOR).map(([k,c]) =>
+    [k, c.name, `background:linear-gradient(140deg,${c.lit},${c.base})`]), 'color');
+  chips('cOrn',   Object.entries(ORN).map(([k,o]) => [k, o.name]), 'orn');
+  chips('cLevel', STEPS.map(s => [s.lv, s.n]), 'level');
+}
+paint();
+</script>

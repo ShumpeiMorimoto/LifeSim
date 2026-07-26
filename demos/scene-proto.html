@@ -1,0 +1,930 @@
+<title>LifeSim — イベントシーン試作</title>
+
+<style>
+:root{
+  --ground:#f5f2f0;
+  --card:#ffffff;
+  --ink:#1a1520;
+  --ink-2:#665d70;
+  --ink-3:#9a91a4;
+  --line:#e4dedd;
+  --accent:#a9691f;
+  --accent-soft:#f0e2cd;
+  --mono:"SFMono-Regular",Consolas,"Liberation Mono",monospace;
+  --gothic:"Yu Gothic UI","Yu Gothic","Hiragino Sans","Noto Sans JP",system-ui,sans-serif;
+  --mincho:"Yu Mincho","YuMincho","Hiragino Mincho ProN","Noto Serif JP",serif;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --ground:#121016; --card:#1a1620; --ink:#ece7f1; --ink-2:#9b93a6;
+    --ink-3:#6d6579; --line:#2b2534; --accent:#dda352; --accent-soft:#33291c;
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#121016; --card:#1a1620; --ink:#ece7f1; --ink-2:#9b93a6;
+  --ink-3:#6d6579; --line:#2b2534; --accent:#dda352; --accent-soft:#33291c;
+}
+:root[data-theme="light"]{
+  --ground:#f5f2f0; --card:#ffffff; --ink:#1a1520; --ink-2:#665d70;
+  --ink-3:#9a91a4; --line:#e4dedd; --accent:#a9691f; --accent-soft:#f0e2cd;
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--ground); color:var(--ink);
+  font-family:var(--gothic); line-height:1.75;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1140px; margin:0 auto; padding:clamp(28px,5vw,64px) clamp(18px,4vw,40px) 96px;
+  display:flex; flex-direction:column; gap:clamp(24px,4vw,40px)}
+
+/* ---------- masthead ---------- */
+.masthead{display:flex; flex-direction:column; gap:10px}
+.eyebrow{
+  margin:0; font-size:11.5px; letter-spacing:.22em; text-transform:uppercase;
+  color:var(--ink-3); font-weight:600;
+}
+h1{
+  margin:0; font-family:var(--mincho); font-weight:600;
+  font-size:clamp(28px,4.4vw,44px); line-height:1.25; letter-spacing:.02em;
+  text-wrap:balance;
+}
+.lede{margin:0; color:var(--ink-2); font-size:clamp(14px,1.6vw,16.5px); max-width:60ch}
+.lede b{color:var(--ink); font-weight:600}
+
+/* ---------- stage ---------- */
+.stage{
+  position:relative; width:100%; aspect-ratio:16/9;
+  container-type:size;
+  border-radius:6px; overflow:hidden; background:#0a070d;
+  box-shadow:0 24px 60px -28px rgba(20,10,30,.55), 0 0 0 1px rgba(0,0,0,.35);
+  user-select:none; isolation:isolate;
+}
+.scene-layer{position:absolute; inset:0}
+.scene-layer svg{
+  position:absolute; inset:0; width:100%; height:100%;
+  transition:opacity .55s ease;
+}
+#fx{position:absolute; inset:0; width:100%; height:100%; pointer-events:none}
+.grade{position:absolute; inset:0; pointer-events:none; mix-blend-mode:soft-light;
+  transition:background .55s ease, opacity .55s ease}
+.vignette{position:absolute; inset:0; pointer-events:none;
+  background:radial-gradient(120% 95% at 50% 42%, transparent 32%, rgba(4,2,8,.72) 100%)}
+.grain{position:absolute; inset:0; pointer-events:none; opacity:.09; mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/></filter><rect width='160' height='160' filter='url(%23n)'/></svg>");
+  background-size:190px 190px}
+.scrim{position:absolute; inset:0; pointer-events:none;
+  background:linear-gradient(to top, rgba(6,3,10,.93) 0%, rgba(6,3,10,.82) 20%, rgba(6,3,10,.32) 42%, transparent 60%)}
+
+/* ---------- hud ---------- */
+.hud{
+  position:absolute; top:0; left:0; right:0; padding:3cqw 3.4cqw 0;
+  display:flex; justify-content:space-between; align-items:flex-start; gap:2cqw;
+  color:#efe7f0; pointer-events:none;
+  text-shadow:0 1px 8px rgba(0,0,0,.85);
+}
+.hud-l{display:flex; align-items:baseline; gap:1.1cqw}
+.age{font-size:3.4cqw; font-weight:300; letter-spacing:.02em; font-variant-numeric:tabular-nums;
+  line-height:1}
+.age .u{font-size:1.5cqw; margin-left:.25cqw; opacity:.72}
+.stg{font-size:1.35cqw; letter-spacing:.16em; opacity:.62}
+.hud-r{display:flex; flex-direction:column; align-items:flex-end; gap:.9cqw}
+.meters{display:flex; gap:1.1cqw}
+.meter{display:flex; flex-direction:column; align-items:center; gap:.5cqw; position:relative}
+.meter .k{font-size:1.15cqw; opacity:.66; letter-spacing:.08em}
+.meter .bar{width:4.6cqw; height:.42cqw; border-radius:.3cqw; background:rgba(255,255,255,.17); overflow:hidden}
+.meter .fill{height:100%; border-radius:.3cqw; background:#ecdcc2; transition:width .8s cubic-bezier(.2,.8,.3,1)}
+.meter.warn .fill{background:#e08b6d}
+.money{font-size:1.5cqw; font-variant-numeric:tabular-nums; letter-spacing:.06em; opacity:.85}
+.npc{
+  position:absolute; top:3.2cqw; left:50%; transform:translateX(-50%);
+  display:flex; align-items:center; gap:.7cqw; font-size:1.25cqw; letter-spacing:.1em;
+  color:#efe7f0; opacity:.72; text-shadow:0 1px 8px rgba(0,0,0,.9); pointer-events:none;
+  transition:opacity .5s ease;
+}
+.npc .pips{display:flex; gap:.32cqw}
+.npc .pip{width:.62cqw; height:.62cqw; border-radius:50%; background:rgba(255,255,255,.24);
+  transition:background .6s ease}
+.npc .pip.on{background:#e9b96e}
+
+/* ---------- script ---------- */
+.script{
+  position:absolute; left:0; right:0; bottom:0; padding:0 6.2cqw 4.4cqw;
+  display:flex; flex-direction:column; gap:1.5cqw;
+}
+.slug{
+  font-size:1.2cqw; letter-spacing:.24em; color:#d8b98a; opacity:0;
+  transform:translateY(.5cqw); transition:opacity .6s ease, transform .6s ease;
+}
+.slug.in{opacity:.9; transform:none}
+.body{
+  margin:0; font-family:var(--mincho); font-size:2.05cqw; line-height:1.95;
+  letter-spacing:.045em; color:#f4eee6; white-space:pre-wrap; min-height:7.8cqw;
+  text-shadow:0 2px 14px rgba(0,0,0,.92), 0 0 30px rgba(0,0,0,.6);
+}
+.caret{display:inline-block; width:.16cqw; height:1.5cqw; background:#e9c88a;
+  vertical-align:-.15cqw; margin-left:.3cqw; animation:blink 1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+
+.choices{display:flex; flex-direction:column; gap:.9cqw; align-items:flex-start}
+.choice{
+  appearance:none; font:inherit; color:#f3ece2; text-align:left; cursor:pointer;
+  font-size:1.62cqw; letter-spacing:.05em; line-height:1.5;
+  padding:1.1cqw 2.2cqw 1.1cqw 1.6cqw;
+  background:linear-gradient(90deg, rgba(255,240,214,.11), rgba(255,240,214,.02));
+  border:0; border-left:.24cqw solid rgba(233,185,110,.55);
+  border-radius:0 .35cqw .35cqw 0;
+  opacity:0; transform:translateY(.8cqw);
+  transition:background .28s ease, border-color .28s ease, transform .28s ease, opacity .45s ease, padding-left .28s ease;
+  backdrop-filter:blur(2px);
+}
+.choice.in{opacity:1; transform:none}
+.choice:hover, .choice:focus-visible{
+  background:linear-gradient(90deg, rgba(255,231,186,.22), rgba(255,231,186,.04));
+  border-left-color:#f0c682; padding-left:2.2cqw; outline:none;
+}
+.choice:focus-visible{box-shadow:0 0 0 .18cqw rgba(240,198,130,.6)}
+.choice .lock{opacity:.55; font-size:1.24cqw; letter-spacing:.1em; margin-left:.8cqw}
+
+.wiring{
+  font-family:var(--mono); font-size:1.15cqw; letter-spacing:.02em; color:#9fd3bd;
+  opacity:0; transform:translateY(.5cqw); transition:opacity .6s ease .3s, transform .6s ease .3s;
+  border-left:.18cqw solid rgba(159,211,189,.4); padding-left:1cqw;
+}
+.wiring.in{opacity:.82; transform:none}
+
+.deltas{position:absolute; inset:0; pointer-events:none; overflow:hidden}
+.delta{
+  position:absolute; font-size:1.5cqw; font-weight:600; font-variant-numeric:tabular-nums;
+  letter-spacing:.02em; text-shadow:0 2px 10px rgba(0,0,0,.9);
+  animation:rise 1.9s cubic-bezier(.2,.7,.3,1) forwards;
+}
+.delta.up{color:#9fe0b4} .delta.down{color:#f09a86}
+@keyframes rise{
+  0%{opacity:0; transform:translateY(.8cqw) scale(.9)}
+  18%{opacity:1; transform:translateY(0) scale(1)}
+  70%{opacity:1}
+  100%{opacity:0; transform:translateY(-2.6cqw)}
+}
+
+.tap{position:absolute; right:3.4cqw; bottom:3.2cqw; font-size:1.2cqw; letter-spacing:.16em;
+  color:#e9c88a; opacity:0; transition:opacity .4s ease; pointer-events:none}
+.tap.in{opacity:.62; animation:pulse 2.2s ease-in-out infinite}
+@keyframes pulse{50%{opacity:.28}}
+
+/* ---------- dock ---------- */
+.dock{display:flex; flex-wrap:wrap; gap:8px; align-items:center}
+.tab{
+  appearance:none; font:inherit; font-size:13.5px; letter-spacing:.06em; cursor:pointer;
+  padding:9px 16px; border-radius:3px; border:1px solid var(--line);
+  background:var(--card); color:var(--ink-2);
+  transition:border-color .2s ease, color .2s ease, background .2s ease;
+}
+.tab:hover{border-color:var(--accent); color:var(--ink)}
+.tab:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+.tab[aria-pressed="true"]{background:var(--accent); border-color:var(--accent); color:#fff; font-weight:600}
+.tab .sub{opacity:.65; font-size:12px; margin-left:7px}
+.dock .spacer{flex:1 1 20px}
+
+/* ---------- notes ---------- */
+.notes{display:grid; gap:clamp(18px,2.4vw,26px); grid-template-columns:repeat(auto-fit,minmax(268px,1fr))}
+.note{
+  background:var(--card); border:1px solid var(--line); border-radius:4px;
+  padding:22px 24px 24px; display:flex; flex-direction:column; gap:11px;
+}
+.note h2{
+  margin:0; font-size:11.5px; letter-spacing:.2em; text-transform:uppercase;
+  color:var(--accent); font-weight:700;
+}
+.note p{margin:0; font-size:14px; color:var(--ink-2); line-height:1.85}
+.note p b{color:var(--ink); font-weight:600}
+.note ul{margin:0; padding-left:0; list-style:none; display:flex; flex-direction:column; gap:7px}
+.note li{font-size:13.5px; color:var(--ink-2); display:flex; gap:10px; line-height:1.6}
+.note li::before{content:""; flex:none; width:5px; height:5px; border-radius:50%;
+  background:var(--accent); opacity:.55; margin-top:9px}
+.note li b{color:var(--ink); font-weight:600}
+code{font-family:var(--mono); font-size:.88em; background:var(--accent-soft);
+  padding:1.5px 5px; border-radius:2px; color:var(--ink)}
+
+.foot{font-size:12.5px; color:var(--ink-3); border-top:1px solid var(--line); padding-top:18px}
+
+@media (prefers-reduced-motion: reduce){
+  *{animation-duration:.01ms !important; animation-iteration-count:1 !important;
+    transition-duration:.01ms !important}
+}
+@media (max-width:640px){
+  .stage{aspect-ratio:4/3}
+}
+</style>
+
+<div class="wrap">
+
+  <header class="masthead">
+    <p class="eyebrow">LifeSim ／ 演出試作 ／ 2026-07-27</p>
+    <h1>イベントシーンの一枚絵</h1>
+    <p class="lede">画像ファイルは0枚。この3場面はすべて<b>同じ9個の部品</b>から組まれている。場面を切り替えて、部品の使い回しでどこまで別物に見えるかを確かめてほしい。音もファイルではなく合成。</p>
+  </header>
+
+  <div class="stage" id="stage">
+    <div class="scene-layer" id="sceneLayer"></div>
+    <canvas id="fx"></canvas>
+    <div class="grade" id="grade"></div>
+    <div class="vignette"></div>
+    <div class="scrim"></div>
+    <div class="grain"></div>
+
+    <div class="hud">
+      <div class="hud-l">
+        <div class="age"><span class="n" id="age">41</span><span class="u">歳</span></div>
+        <div class="stg" id="stg">中年期</div>
+      </div>
+      <div class="hud-r">
+        <div class="meters" id="meters"></div>
+        <div class="money" id="money">¥3,240,000</div>
+      </div>
+    </div>
+    <div class="npc" id="npc"></div>
+
+    <div class="script">
+      <div class="slug" id="slug"></div>
+      <p class="body" id="body"></p>
+      <div class="choices" id="choices"></div>
+      <div class="wiring" id="wiring"></div>
+    </div>
+
+    <div class="deltas" id="deltas"></div>
+    <div class="tap" id="tap">クリックで送る</div>
+  </div>
+
+  <div class="dock" id="dock">
+    <button class="tab" data-scene="0" aria-pressed="true">同窓会<span class="sub">中年期・夜</span></button>
+    <button class="tab" data-scene="1" aria-pressed="false">放課後<span class="sub">学生期・夕</span></button>
+    <button class="tab" data-scene="2" aria-pressed="false">病室<span class="sub">中年期・朝</span></button>
+    <span class="spacer"></span>
+    <button class="tab" id="sound" aria-pressed="false">🔈 音を出す<span class="sub">合成音</span></button>
+  </div>
+
+  <section class="notes">
+    <div class="note">
+      <h2>この試作でわかること</h2>
+      <p>コードだけの一枚絵が成立する条件は<b>「顔を描かない」</b>こと。人物はシルエットにして、光・空気・構図で語らせる。この方向なら絵の巧拙が出ず、しかも没入は落ちない。</p>
+      <p>逆に言うと、表情や具体的な描き込みが要る演出は最初から諦める。それが破綻しない線引き。</p>
+    </div>
+    <div class="note">
+      <h2>3場面が共有する部品</h2>
+      <ul>
+        <li><b>人物シルエット</b> — 頭＋肩の1関数。傾き・高さ・縁光の向きだけ引数</li>
+        <li><b>窓</b> — 桟の数と外の色を変えるだけで夜景／夕陽／曇天</li>
+        <li><b>光源</b> — 吊り照明・窓・蛍光灯すべて同じぼかし円</li>
+        <li><b>光の帯</b> — 差し込む陽と、廊下の漏れ光</li>
+        <li><b>家具</b> — 座卓・学習机・ベッドは同じ矩形＋脚</li>
+        <li><b>粒子</b>（canvas）— 提灯のボケ／埃／朝の光の粉</li>
+        <li><b>階調・周辺減光・粒状</b> — 全場面共通の最終処理</li>
+      </ul>
+    </div>
+    <div class="note">
+      <h2>まだ手当てが要るところ</h2>
+      <p>1場面あたりの記述は約30行。<b>この30行を誰が書くか</b>が量産の分かれ目で、イベント本文と一緒にAIに書かせて開発者が採否だけ決める形にしたい。</p>
+      <p>特注の描き込みは節目だけに絞る。ここを「%」で決めると必ず膨らむので、<b>絶対数で上限</b>を切る。</p>
+    </div>
+  </section>
+
+  <p class="foot">選択後に緑で出るのが状態モデルへの配線。絵とテキストの下でどの値が動いたかを見えるようにしてある（本番では非表示）。</p>
+
+</div>
+
+<script>
+"use strict";
+
+/* ============================================================
+   部品キット — 全場面がこの関数群だけで組まれる
+   ============================================================ */
+
+function rng(seed){
+  let a = seed >>> 0;
+  return () => {
+    a = (a + 0x6D2B79F5) >>> 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/* 1. 人物シルエット — 頭＋肩。縁光を1枚ずらして重ねるだけで奥行きが出る */
+function figure(o){
+  const hw = o.hw ?? 62, h = o.h ?? 190, hr = o.hr ?? 26;
+  const rimSide = o.rimSide ?? 1, rimA = o.rimA ?? .5;
+  const body = `M ${-hw} ${h} C ${-hw} ${h*.30} ${-hw*.92} 5 ${-hw*.42} 0 `
+             + `L ${hw*.42} 0 C ${hw*.92} 5 ${hw} ${h*.30} ${hw} ${h} Z`;
+  const head = `<ellipse cx="${(o.headX ?? 0)}" cy="${-hr-15}" rx="${hr}" ry="${hr*1.14}"/>`;
+  const shape = `<path d="${body}"/>${head}`;
+  return `<g transform="translate(${o.x},${o.y}) rotate(${o.tilt ?? 0})"${o.blur?` filter="url(#${o.blur})"`:``}>
+    <g transform="translate(${rimSide*7},-6)" fill="${o.rim ?? '#e8a961'}" opacity="${rimA}">${shape}</g>
+    <g fill="${o.fill ?? '#0b0810'}">${shape}</g>
+  </g>`;
+}
+
+/* 2. 窓 — 外の色と桟の数だけ差し替える */
+function windowPane(o){
+  const {x, y, w, h} = o;
+  const cols = o.cols ?? 2, rows = o.rows ?? 1;
+  const fw = o.frame ?? 9, fc = o.frameColor ?? '#0b080e';
+  let s = `<g><rect x="${x}" y="${y}" width="${w}" height="${h}" fill="url(#${o.sky})"/>`;
+  if (o.outside) s += o.outside;
+  for (let i = 1; i <= cols; i++){
+    const cx = x + w * i / (cols + 1);
+    s += `<rect x="${cx - fw/2}" y="${y}" width="${fw}" height="${h}" fill="${fc}"/>`;
+  }
+  for (let j = 1; j <= rows; j++){
+    const cy = y + h * j / (rows + 1);
+    s += `<rect x="${x}" y="${cy - fw/2}" width="${w}" height="${fw}" fill="${fc}"/>`;
+  }
+  s += `<rect x="${x - fw}" y="${y - fw}" width="${w + fw*2}" height="${h + fw*2}"
+        fill="none" stroke="${fc}" stroke-width="${fw*1.7}"/></g>`;
+  return s;
+}
+
+/* 3. 光源 — 吊り照明も窓明かりもこの1つ */
+function lightSource(o){
+  const c = o.color ?? '#ffc978', r = o.r ?? 26, glow = o.glow ?? 150;
+  let s = `<g>`;
+  if (o.cord) s += `<line x1="${o.x}" y1="${o.y - 300}" x2="${o.x}" y2="${o.y - 44}"
+                     stroke="#09060c" stroke-width="3"/>`;
+  if (o.shade) s += `<path d="M ${o.x-46} ${o.y-6} L ${o.x-17} ${o.y-50} L ${o.x+17} ${o.y-50}
+                     L ${o.x+46} ${o.y-6} Z" fill="#1a1013"/>`;
+  s += `<circle cx="${o.x}" cy="${o.y}" r="${glow}" fill="${c}"
+        opacity="${o.glowA ?? .17}" filter="url(#blurXL)"/>`;
+  s += `<circle cx="${o.x}" cy="${o.y}" r="${r*1.5}" fill="${c}" opacity=".4" filter="url(#blurM)"/>`;
+  s += `<circle cx="${o.x}" cy="${o.y}" r="${r*.5}" fill="#fff6e2" opacity="${o.coreA ?? .95}"/>`;
+  return s + `</g>`;
+}
+
+/* 4. 光の帯 — 差し込む陽・漏れ光 */
+function lightShaft(o){
+  const {x, y, w, len, angle} = o;
+  return `<g transform="translate(${x},${y}) rotate(${angle})" opacity="${o.a ?? .07}">
+    <path d="M 0 0 L ${w} 0 L ${w*1.9} ${len} L ${-w*.5} ${len} Z"
+      fill="${o.color ?? '#ffd9a0'}" filter="url(#blurL)"/></g>`;
+}
+
+/* 5. 家具 — 天板＋脚。座卓も学習机もベッドもこれ */
+function furniture(o){
+  const {x, y, w, h} = o;
+  const t = o.top ?? 14, legInset = o.legInset ?? 14, c = o.color ?? '#170f14';
+  let s = `<g>`;
+  if (o.legs !== false){
+    s += `<rect x="${x + legInset}" y="${y}" width="${o.legW ?? 11}" height="${h}" fill="${c}"/>`;
+    s += `<rect x="${x + w - legInset - (o.legW ?? 11)}" y="${y}" width="${o.legW ?? 11}" height="${h}" fill="${c}"/>`;
+  }
+  s += `<rect x="${x}" y="${y}" width="${w}" height="${t}" fill="${c}"/>`;
+  if (o.rim) s += `<rect x="${x}" y="${y}" width="${w}" height="2.5" fill="${o.rim}" opacity=".5"/>`;
+  return s + `</g>`;
+}
+
+/* 6. 小物 — 縦長の輪郭ひとつ。グラス・点滴・ギターケース */
+function prop(o){
+  return `<g transform="translate(${o.x},${o.y}) rotate(${o.tilt ?? 0})"${o.blur?` filter="url(#${o.blur})"`:``}>
+    <path d="${o.d}" fill="${o.fill ?? '#0d0910'}"/>
+    ${o.rim ? `<path d="${o.d}" fill="none" stroke="${o.rim}" stroke-width="2.6" opacity=".5"/>` : ``}
+  </g>`;
+}
+
+/* ============================================================
+   場面定義 — 1場面あたり約30行
+   ============================================================ */
+
+const SCENES = [
+
+/* ---------- 0. 同窓会 ---------- */
+{
+  id:'reunion',
+  slug:'同窓会・二次会 ／ 41歳 秋',
+  grade:'linear-gradient(160deg, rgba(255,176,92,.30), rgba(60,28,80,.42))',
+  state:{ age:41, stage:'中年期', money:3240000,
+    stats:{知:62,体:40,魅:55,精:48,健:71} },
+  npc:{ name:'親友・ケン', v:45 },
+  fx:{ n:26, r:[14,54], color:'255,206,140', a:[.05,.16], drift:.10, blur:14 },
+  body:`「久しぶり」の声が、思ったより歳を取っていた。\n座敷の奥で、あいつがギターケースを壁に立てかけている。高校でやめた軽音部を、あいつだけがやめなかった。\n去年メジャーデビューしたらしい、と誰かが小声で言った。誰かが勝手に頼んだ唐揚げは、もう四皿目に入っている。`,
+  choices:[
+    { t:'心から祝福する', fx:{精:+8}, npcFx:+12,
+      wire:'stats.mental +8 / relations.best_friend_ken +12',
+      res:'グラスを持ち上げると、あいつは少し照れて笑った。\n悔しさが消えたわけではない。ただ、今日は先に手が動いた。' },
+    { t:'今からギターを買う', fx:{精:+4,魅:+2}, money:-198000, npcFx:+3,
+      wire:'resources.money -198000 / flags.add hobby.band_restart',
+      res:'帰り道、二十四時間営業の楽器店の前で足が止まった。\n四十一歳が中古のテレキャスターを抱えて改札を通る。悪くない絵だと思うことにした。' },
+    { t:'酔ったふりをして先に帰る', fx:{精:-6}, npcFx:-8,
+      wire:'hidden.regret +0.12 / history.thread reunion_avoided(open)',
+      res:'ホームの風が思ったより冷たかった。\n祝福も嫉妬も言わないまま終わった夜のことは、たぶんこの先も何度か思い出す。' }
+  ],
+  build(){
+    const R = rng(7);
+    let s = `<rect width="1600" height="900" fill="url(#reu-wall)"/>`;
+    // 窓の外 — 夜景
+    let city = `<g>`;
+    for (let i = 0; i < 9; i++){
+      const bx = 120 + i * 160 + R()*40, bw = 70 + R()*70, bh = 90 + R()*200;
+      city += `<rect x="${bx}" y="${440 - bh}" width="${bw}" height="${bh}" fill="#080d1c"/>`;
+      for (let k = 0; k < 14; k++){
+        if (R() > .55) continue;
+        city += `<rect x="${bx + 9 + (k%4)*(bw/4.4)}" y="${450 - bh + Math.floor(k/4)*26}"
+          width="7" height="9" fill="#f0c078" opacity="${.25 + R()*.5}"/>`;
+      }
+    }
+    s += windowPane({ x:120, y:110, w:1360, h:330, cols:5, rows:1, sky:'reu-city',
+                      outside: city + `</g>` });
+    // 吊り照明3つ
+    [[290,296],[800,262],[1318,302]].forEach(([x,y]) =>
+      s += lightSource({x, y, r:26, glow:210, cord:true, shade:true, glowA:.15}));
+    // 奥の席（ぼかし）
+    s += figure({x:660, y:498, h:150, hw:50, hr:22, rim:'#e0a05a', rimA:.35, blur:'blurS', tilt:2});
+    // 座卓と手前の席
+    s += figure({x:110,  y:512, h:200, hw:64, tilt:-2, rimSide:1});
+    s += figure({x:330,  y:504, h:206, hw:68, tilt:3,  rimSide:-1, headX:6});
+    s += figure({x:540,  y:516, h:196, hw:60, tilt:-4, rimSide:1});
+    s += figure({x:980,  y:508, h:200, hw:66, tilt:2,  rimSide:-1});
+    s += figure({x:1460, y:510, h:198, hw:64, tilt:-3, rimSide:-1});
+    // 焦点：立っているあいつ（縁光を強く）
+    s += figure({x:1205, y:452, h:262, hw:70, hr:29, tilt:1, rimSide:-1,
+                 rim:'#ffd08c', rimA:.72});
+    // ギターケース
+    s += prop({ x:1352, y:706, tilt:9, rim:'#c98c4e',
+      d:'M 0 0 L -34 -14 C -50 -70 -50 -120 -34 -168 L -12 -232 C -4 -252 14 -252 22 -232 L 44 -168 C 60 -120 60 -70 44 -14 Z' });
+    // 座卓
+    s += furniture({x:-40, y:716, w:1690, h:190, top:20, legs:false,
+                    color:'#150d12', rim:'#c9915a'});
+    // 手前のグラス（ぼかし＝被写界深度）
+    s += prop({ x:250, y:790, blur:'blurS', rim:'#e8b872',
+      d:'M -26 0 L -21 -86 L 21 -86 L 26 0 Z' });
+    s += prop({ x:1395, y:806, blur:'blurS', rim:'#e8b872',
+      d:'M -23 0 L -19 -74 L 19 -74 L 23 0 Z' });
+    return s;
+  },
+  defs:`
+    <linearGradient id="reu-wall" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#150e1e"/><stop offset=".55" stop-color="#2a1922"/>
+      <stop offset="1" stop-color="#3a2320"/></linearGradient>
+    <linearGradient id="reu-city" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#070b1a"/><stop offset="1" stop-color="#1a2540"/></linearGradient>`
+},
+
+/* ---------- 1. 放課後 ---------- */
+{
+  id:'classroom',
+  slug:'放課後の教室 ／ 16歳 初夏',
+  grade:'linear-gradient(200deg, rgba(255,164,80,.34), rgba(90,40,70,.30))',
+  state:{ age:16, stage:'学生期', money:4200,
+    stats:{知:54,体:61,魅:47,精:66,健:88} },
+  npc:null,
+  fx:{ n:60, r:[2,6], color:'255,224,178', a:[.10,.42], drift:.05, blur:1 },
+  body:`夕日が机の縁を橙に焼いて、教室にはもう誰もいない。\n部活に行くか、このまま帰るか。決めかねているうちに、下校を告げるチャイムだけが鳴った。\n窓際に立っているのは、名前も知らない同級生だった。`,
+  choices:[
+    { t:'声をかける', fx:{魅:+4,精:+3},
+      wire:'flags.add rel.classmate_window / relations.unknown_classmate = 8',
+      res:'「まだ帰らないの」\n返ってきたのは、思っていたよりずっと普通の声だった。名前を知るのはこの三分後になる。' },
+    { t:'黙って鞄を取る', fx:{精:-2},
+      wire:'history.thread classroom_missed(open) / hidden.regret +0.05',
+      res:'廊下に出ると、背中で窓の音がした。\n振り返らなかったことを、この日のうちに一度だけ思い出した。' },
+    { t:'部室へ走る', fx:{体:+5,精:+4}, lock:'（体力 55 以上）',
+      wire:'flags.add club.continued / stats.fitness +5',
+      res:'階段を二段飛ばしで降りると、下でまだ誰かがドラムを叩いていた。\nやめる理由は、今日はどこにも見当たらなかった。' }
+  ],
+  build(){
+    const R = rng(21);
+    let s = `<rect width="1600" height="900" fill="url(#cls-wall)"/>`;
+    // 窓（右）— 外は夕景
+    const outside = `<g opacity=".55">
+      <path d="M 880 520 L 1010 452 L 1130 496 L 1260 440 L 1400 486 L 1560 448 L 1560 650 L 880 650 Z"
+        fill="#8a4a52" opacity=".55"/>
+      <rect x="1170" y="330" width="86" height="230" fill="#7a4050" opacity=".5"/></g>`;
+    s += windowPane({ x:880, y:96, w:680, h:554, cols:2, rows:1, sky:'cls-sun',
+                      outside, frameColor:'#170f12' });
+    // 黒板（左）
+    s += `<rect x="52" y="150" width="540" height="290" fill="#111a1a"/>`;
+    s += `<rect x="40" y="138" width="564" height="314" fill="none" stroke="#241812" stroke-width="16"/>`;
+    s += `<rect x="40" y="452" width="564" height="16" fill="#241812"/>`;
+    // 差し込む陽
+    s += lightShaft({x:900, y:150, w:150, len:760, angle:24, a:.09});
+    s += lightShaft({x:900, y:330, w:110, len:700, angle:31, a:.07});
+    s += lightShaft({x:900, y:470, w:80,  len:620, angle:38, a:.05});
+    // 机 — 3列。奥ほど小さく高い位置に
+    const rows = [[556,.66,5,'#1b1114'], [652,.82,4,'#180f12'], [772,1,4,'#140c10']];
+    rows.forEach(([y, sc, n, col]) => {
+      for (let i = 0; i < n; i++){
+        const w = 210*sc, x = 60 + i*(300*sc) + (sc<1 ? 40 : 0);
+        s += furniture({x, y, w, h:120*sc, top:13*sc, legInset:16*sc, legW:10*sc,
+                        color:col, rim:'#e09a55'});
+      }
+    });
+    // 窓際に立つ人物
+    s += figure({x:1024, y:448, h:268, hw:60, hr:26, rimSide:1, rim:'#ffc98a',
+                 rimA:.78, tilt:-1});
+    // 手前の机（ぼかし）
+    s += furniture({x:-60, y:826, w:520, h:120, top:22, legs:false,
+                    color:'#0e0a0c', rim:'#c07a42'});
+    return s;
+  },
+  defs:`
+    <linearGradient id="cls-wall" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#160f18"/><stop offset=".6" stop-color="#301a1c"/>
+      <stop offset="1" stop-color="#40231c"/></linearGradient>
+    <linearGradient id="cls-sun" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#5c3a6a"/><stop offset=".38" stop-color="#e0705a"/>
+      <stop offset=".72" stop-color="#f7ac5e"/><stop offset="1" stop-color="#ffd79a"/></linearGradient>`
+},
+
+/* ---------- 2. 病室 ---------- */
+{
+  id:'hospital',
+  slug:'総合病院 4F 東棟 ／ 44歳 冬',
+  grade:'linear-gradient(180deg, rgba(150,190,220,.26), rgba(30,45,70,.34))',
+  state:{ age:44, stage:'中年期', money:1870000,
+    stats:{知:64,体:36,魅:50,精:31,健:58} },
+  npc:{ name:'母', v:72 },
+  fx:{ n:34, r:[2,7], color:'214,232,246', a:[.06,.24], drift:.03, blur:1 },
+  body:`点滴の落ちる音だけが、規則正しい。\n母は眠っている。仕事を抜けてきた三時間のうち、話せたのは十分ほどだった。\n次に来られるのはいつだろう、と考えている自分が、少し嫌になる。`,
+  choices:[
+    { t:'今夜は泊まっていく', fx:{精:+6,体:-8}, npcFx:+15,
+      wire:'relations.mother +15 / flags.add job.absence_used / stats.fitness -8',
+      res:'夜勤の看護師が簡易ベッドを出してくれた。\n明け方、母が一度だけこちらを見て、また眠った。それだけの夜だった。' },
+    { t:'終電で帰る', fx:{精:-5}, npcFx:-3,
+      wire:'hidden.regret +0.18 / history.thread mother_last_visit(open)',
+      res:'病室を出るとき、ドアを閉める音を必要以上に気にした。\nこの三時間のことを、あとで何度も数え直すことになる。' },
+    { t:'黙って手を握る', fx:{精:+9}, npcFx:+8,
+      wire:'relations.mother +8 / stats.mental +9 / history 記録（回想で参照）',
+      res:'思っていたよりずっと軽い手だった。\n起きているのかどうかも分からないまま、しばらくそうしていた。' }
+  ],
+  build(){
+    let s = `<rect width="1600" height="900" fill="url(#hos-wall)"/>`;
+    // 窓（左上）— 曇天。外はほぼ白飛び
+    const outside = `<g opacity=".28">
+      <rect x="150" y="392" width="240" height="180" fill="#8fa6b8"/>
+      <ellipse cx="580" cy="430" rx="120" ry="80" fill="#93aab6"/></g>`;
+    s += windowPane({ x:120, y:70, w:640, h:500, cols:1, rows:1, sky:'hos-sky',
+                      outside, frameColor:'#1a2029' });
+    // 窓からの淡い光
+    s += lightSource({x:440, y:320, r:10, glow:420, color:'#cfe4f2', glowA:.13, coreA:0});
+    // カーテンレールと襞
+    s += `<rect x="880" y="60" width="700" height="9" fill="#1c232c"/>`;
+    for (let i = 0; i < 11; i++){
+      const x = 890 + i * 63;
+      s += `<rect x="${x}" y="66" width="46" height="620" fill="#2a323d"
+             opacity="${.55 + (i % 2) * .28}"/>`;
+    }
+    // ベッド
+    s += furniture({x:150, y:648, w:940, h:150, top:26, legInset:40, legW:14,
+                    color:'#1e252e', rim:'#adc4d4'});
+    s += `<rect x="150" y="596" width="120" height="58" rx="14" fill="#2c3742"/>`;  // 枕
+    s += `<path d="M 262 650 C 380 596 640 600 900 646 L 900 664 L 262 664 Z" fill="#28313b"/>`;
+    // 点滴スタンド
+    s += `<rect x="96" y="380" width="7" height="300" fill="#141a21"/>`;
+    s += `<rect x="72" y="376" width="56" height="7" fill="#141a21"/>`;
+    s += `<path d="M 78 386 L 118 386 L 112 470 L 84 470 Z" fill="#c8dae8" opacity=".62"/>`;
+    // 面会者（手前・背中）
+    s += figure({x:1290, y:520, h:400, hw:118, hr:46, rimSide:-1,
+                 rim:'#9fbdd2', rimA:.42, fill:'#0e131a'});
+    s += `<rect x="1180" y="836" width="230" height="14" fill="#0e131a"/>`;  // 椅子
+    return s;
+  },
+  defs:`
+    <linearGradient id="hos-wall" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1b2129"/><stop offset="1" stop-color="#2e3742"/></linearGradient>
+    <linearGradient id="hos-sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#c9dcea"/><stop offset="1" stop-color="#eef4f8"/></linearGradient>`
+}
+];
+
+const SHARED_DEFS = `
+  <filter id="blurS"  x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="4"/></filter>
+  <filter id="blurM"  x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="14"/></filter>
+  <filter id="blurL"  x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="34"/></filter>
+  <filter id="blurXL" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="70"/></filter>`;
+
+/* ============================================================
+   合成音 — 音声ファイルは持たない
+   ============================================================ */
+
+const Audio_ = {
+  ctx:null, on:false, ambient:null,
+
+  boot(){
+    if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    if (this.ctx.state === 'suspended') this.ctx.resume();
+  },
+  blip(){
+    if (!this.on) return;
+    const t = this.ctx.currentTime, o = this.ctx.createOscillator(), g = this.ctx.createGain();
+    o.type = 'triangle'; o.frequency.value = 1650 + Math.random() * 260;
+    g.gain.setValueAtTime(.014, t); g.gain.exponentialRampToValueAtTime(.0005, t + .035);
+    o.connect(g).connect(this.ctx.destination); o.start(t); o.stop(t + .04);
+  },
+  select(){
+    if (!this.on) return;
+    const t = this.ctx.currentTime;
+    [[520, 0], [780, .07]].forEach(([f, d]) => {
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      o.type = 'sine'; o.frequency.value = f;
+      g.gain.setValueAtTime(0, t + d);
+      g.gain.linearRampToValueAtTime(.07, t + d + .01);
+      g.gain.exponentialRampToValueAtTime(.0005, t + d + .32);
+      o.connect(g).connect(this.ctx.destination); o.start(t + d); o.stop(t + d + .34);
+    });
+  },
+  stat(up){
+    if (!this.on) return;
+    const t = this.ctx.currentTime, o = this.ctx.createOscillator(), g = this.ctx.createGain();
+    o.type = 'sine';
+    o.frequency.setValueAtTime(up ? 620 : 460, t);
+    o.frequency.exponentialRampToValueAtTime(up ? 940 : 300, t + .19);
+    g.gain.setValueAtTime(.05, t); g.gain.exponentialRampToValueAtTime(.0005, t + .26);
+    o.connect(g).connect(this.ctx.destination); o.start(t); o.stop(t + .28);
+  },
+
+  /* 場面の環境音。ノイズ＋フィルタと、病室の点滴音だけで作る */
+  setAmbient(id){
+    this.stopAmbient();
+    if (!this.on) return;
+    const ctx = this.ctx, out = ctx.createGain();
+    out.gain.value = 0; out.connect(ctx.destination);
+    const nodes = [out];
+
+    const len = ctx.sampleRate * 2;
+    const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+    const d = buf.getChannelData(0);
+    let last = 0;
+    for (let i = 0; i < len; i++){
+      const w = Math.random() * 2 - 1;
+      last = (last + .02 * w) / 1.02; d[i] = last * 3.2;
+    }
+    const src = ctx.createBufferSource(); src.buffer = buf; src.loop = true;
+    const flt = ctx.createBiquadFilter();
+    nodes.push(src, flt);
+
+    if (id === 'reunion'){          // 店のざわめき
+      flt.type = 'bandpass'; flt.frequency.value = 620; flt.Q.value = .8;
+      const lfo = ctx.createOscillator(), lg = ctx.createGain();
+      lfo.frequency.value = .18; lg.gain.value = 180;
+      lfo.connect(lg).connect(flt.frequency); lfo.start();
+      nodes.push(lfo, lg);
+      out.gain.linearRampToValueAtTime(.10, ctx.currentTime + 1.4);
+    } else if (id === 'classroom'){ // 校舎の静けさと外の風
+      flt.type = 'lowpass'; flt.frequency.value = 340;
+      out.gain.linearRampToValueAtTime(.055, ctx.currentTime + 1.4);
+    } else {                        // 病室：空調＋4秒おきの電子音
+      flt.type = 'lowpass'; flt.frequency.value = 210;
+      out.gain.linearRampToValueAtTime(.05, ctx.currentTime + 1.4);
+      this.beepTimer = setInterval(() => {
+        if (!this.on) return;
+        const t = ctx.currentTime, o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'sine'; o.frequency.value = 1180;
+        g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(.028, t + .008);
+        g.gain.exponentialRampToValueAtTime(.0004, t + .1);
+        o.connect(g).connect(ctx.destination); o.start(t); o.stop(t + .12);
+      }, 4000);
+    }
+    src.connect(flt).connect(out); src.start();
+    this.ambient = { nodes, src, out };
+  },
+  stopAmbient(){
+    clearInterval(this.beepTimer);
+    if (!this.ambient) return;
+    const { src, out } = this.ambient;
+    try {
+      out.gain.linearRampToValueAtTime(0, this.ctx.currentTime + .3);
+      setTimeout(() => { try { src.stop(); } catch(e){} }, 400);
+    } catch(e){}
+    this.ambient = null;
+  }
+};
+
+/* ============================================================
+   画面
+   ============================================================ */
+
+const el = id => document.getElementById(id);
+const KEYS = ['知','体','魅','精','健'];
+const NAMES = {知:'知力', 体:'体力', 魅:'魅力', 精:'精神', 健:'健康'};
+
+let cur = 0, state = null, typing = null, phase = 'idle';
+
+/* --- HUD --- */
+function buildMeters(){
+  el('meters').innerHTML = KEYS.map(k =>
+    `<div class="meter" id="m-${k}" title="${NAMES[k]}">
+       <span class="k">${k}</span>
+       <span class="bar"><span class="fill" id="f-${k}"></span></span>
+     </div>`).join('');
+}
+function paintHud(){
+  el('age').textContent = state.age;
+  el('stg').textContent = state.stage;
+  el('money').textContent = '¥' + state.money.toLocaleString('ja-JP');
+  KEYS.forEach(k => {
+    el('f-' + k).style.width = state.stats[k] + '%';
+    el('m-' + k).classList.toggle('warn', state.stats[k] < 35);
+  });
+  const npc = el('npc'), def = SCENES[cur].npc;
+  if (!def){ npc.style.opacity = 0; npc.innerHTML = ''; return; }
+  const lit = Math.round(state.npcV / 20);
+  npc.innerHTML = `<span>${def.name}</span><span class="pips">` +
+    [0,1,2,3,4].map(i => `<span class="pip${i < lit ? ' on' : ''}"></span>`).join('') + `</span>`;
+  npc.style.opacity = '';
+}
+
+/* --- 逐次表示。読点で息を継ぐ --- */
+function type(text, done){
+  const node = el('body');
+  let i = 0;
+  node.innerHTML = '';
+  clearTimeout(typing);
+  const caret = document.createElement('span');
+  caret.className = 'caret';
+  const step = () => {
+    if (i >= text.length){ caret.remove(); typing = null; done && done(); return; }
+    const ch = text[i++];
+    node.insertBefore(document.createTextNode(ch), caret);
+    if (i % 3 === 0) Audio_.blip();
+    let wait = 26;
+    if (ch === '、') wait = 150;
+    else if (ch === '。') wait = 260;
+    else if (ch === '\n') wait = 320;
+    typing = setTimeout(step, wait);
+  };
+  node.appendChild(caret);
+  typing = setTimeout(step, 260);
+}
+function skipType(text){
+  clearTimeout(typing); typing = null;
+  el('body').textContent = text;
+}
+
+/* --- 差分の浮き上がり --- */
+function floatDelta(key, n){
+  const anchor = el('m-' + key) || el('money');
+  const box = el('stage').getBoundingClientRect();
+  const r = anchor.getBoundingClientRect();
+  const d = document.createElement('div');
+  d.className = 'delta ' + (n > 0 ? 'up' : 'down');
+  d.textContent = (n > 0 ? '+' : '') + n;
+  d.style.left = (r.left - box.left + r.width / 2 - 12) + 'px';
+  d.style.top  = (r.top  - box.top  + r.height + 4) + 'px';
+  el('deltas').appendChild(d);
+  setTimeout(() => d.remove(), 2000);
+}
+
+/* --- 選択肢 --- */
+function showChoices(){
+  const box = el('choices');
+  box.innerHTML = '';
+  SCENES[cur].choices.forEach((c, i) => {
+    const b = document.createElement('button');
+    b.className = 'choice';
+    b.innerHTML = `${c.t}${c.lock ? `<span class="lock">${c.lock}</span>` : ''}`;
+    b.addEventListener('click', e => { e.stopPropagation(); pick(c); });
+    box.appendChild(b);
+    setTimeout(() => b.classList.add('in'), 90 + i * 110);
+  });
+  phase = 'choosing';
+}
+
+function pick(c){
+  if (phase !== 'choosing') return;
+  phase = 'resolving';
+  Audio_.boot(); Audio_.select();
+  el('choices').innerHTML = '';
+  el('tap').classList.remove('in');
+
+  Object.entries(c.fx || {}).forEach(([k, v], i) => {
+    state.stats[k] = Math.max(0, Math.min(100, state.stats[k] + v));
+    setTimeout(() => { floatDelta(k, v); Audio_.stat(v > 0); }, 220 + i * 190);
+  });
+  if (c.money){
+    state.money += c.money;
+    setTimeout(() => floatDelta('money', c.money), 220);
+  }
+  if (c.npcFx != null) state.npcV = Math.max(0, Math.min(100, state.npcV + c.npcFx));
+  setTimeout(paintHud, 200);
+
+  type(c.res, () => {
+    const w = el('wiring');
+    w.textContent = '▸ ' + c.wire;
+    w.classList.add('in');
+    el('tap').textContent = '別の場面を選ぶ／もう一度';
+    el('tap').classList.add('in');
+    phase = 'done';
+  });
+}
+
+/* --- 場面切り替え --- */
+function load(i, replay){
+  const sc = SCENES[i];
+  cur = i;
+  state = JSON.parse(JSON.stringify(sc.state));
+  state.npcV = sc.npc ? sc.npc.v : 0;
+  phase = 'intro';
+
+  const layer = el('sceneLayer');
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('viewBox', '0 0 1600 900');
+  svg.setAttribute('preserveAspectRatio', 'xMidYMid slice');
+  svg.innerHTML = `<defs>${SHARED_DEFS}${sc.defs}</defs>` + sc.build();
+  svg.style.opacity = replay ? 1 : 0;
+  layer.appendChild(svg);
+  requestAnimationFrame(() => {
+    svg.style.opacity = 1;
+    [...layer.children].forEach(n => {
+      if (n !== svg){ n.style.opacity = 0; setTimeout(() => n.remove(), 600); }
+    });
+  });
+
+  el('grade').style.background = sc.grade;
+  startFx(sc.fx);
+  paintHud();
+
+  el('wiring').classList.remove('in');
+  el('wiring').textContent = '';
+  el('choices').innerHTML = '';
+  el('slug').classList.remove('in');
+  el('slug').textContent = sc.slug;
+  el('body').textContent = '';
+  el('tap').classList.remove('in');
+  el('tap').textContent = 'クリックで送る';
+
+  setTimeout(() => el('slug').classList.add('in'), 320);
+  setTimeout(() => {
+    phase = 'typing';
+    el('tap').classList.add('in');
+    type(sc.body, showChoices);
+  }, 760);
+
+  document.querySelectorAll('[data-scene]').forEach(b =>
+    b.setAttribute('aria-pressed', String(+b.dataset.scene === i)));
+  if (Audio_.on) Audio_.setAmbient(sc.id);
+}
+
+/* --- 粒子。提灯のボケも埃も同じ処理 --- */
+const cv = el('fx'), cx = cv.getContext('2d');
+let parts = [], fxCfg = null, raf = null;
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+function sizeCanvas(){
+  const r = cv.getBoundingClientRect(), dpr = Math.min(devicePixelRatio || 1, 2);
+  cv.width = r.width * dpr; cv.height = r.height * dpr;
+  cx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  cv._w = r.width; cv._h = r.height;
+}
+function startFx(cfg){
+  fxCfg = cfg; sizeCanvas();
+  const R = rng(99);
+  parts = Array.from({length: cfg.n}, () => ({
+    x: R() * cv._w, y: R() * cv._h,
+    r: cfg.r[0] + R() * (cfg.r[1] - cfg.r[0]),
+    a: cfg.a[0] + R() * (cfg.a[1] - cfg.a[0]),
+    vx: (R() - .5) * cfg.drift, vy: -(.06 + R() * cfg.drift * 2),
+    ph: R() * 6.28
+  }));
+  if (!raf) loop();
+}
+function loop(){
+  raf = requestAnimationFrame(loop);
+  if (!fxCfg) return;
+  cx.clearRect(0, 0, cv._w, cv._h);
+  cx.filter = fxCfg.blur > 2 ? `blur(${fxCfg.blur}px)` : 'none';
+  const t = performance.now() / 1000;
+  for (const p of parts){
+    if (!reduced){
+      p.x += p.vx + Math.sin(t * .35 + p.ph) * .12;
+      p.y += p.vy * .35;
+      if (p.y < -p.r) { p.y = cv._h + p.r; p.x = Math.random() * cv._w; }
+      if (p.x < -p.r) p.x = cv._w + p.r;
+      if (p.x > cv._w + p.r) p.x = -p.r;
+    }
+    const tw = reduced ? 1 : .72 + Math.sin(t * .9 + p.ph) * .28;
+    cx.fillStyle = `rgba(${fxCfg.color},${p.a * tw})`;
+    cx.beginPath(); cx.arc(p.x, p.y, p.r, 0, 6.2832); cx.fill();
+  }
+  cx.filter = 'none';
+}
+addEventListener('resize', () => { sizeCanvas(); });
+
+/* --- 操作 --- */
+el('stage').addEventListener('click', () => {
+  Audio_.boot();
+  if (phase === 'typing' && typing){ skipType(SCENES[cur].body); showChoices(); }
+  else if (phase === 'done') load(cur, true);
+});
+document.querySelectorAll('[data-scene]').forEach(b =>
+  b.addEventListener('click', () => { Audio_.boot(); load(+b.dataset.scene); }));
+
+el('sound').addEventListener('click', function(){
+  Audio_.boot();
+  Audio_.on = !Audio_.on;
+  this.setAttribute('aria-pressed', String(Audio_.on));
+  this.innerHTML = Audio_.on
+    ? '🔊 音を消す<span class="sub">合成音</span>'
+    : '🔈 音を出す<span class="sub">合成音</span>';
+  if (Audio_.on) Audio_.setAmbient(SCENES[cur].id); else Audio_.stopAmbient();
+});
+
+buildMeters();
+load(0);
+</script>

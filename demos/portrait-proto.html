@@ -1,0 +1,512 @@
+<title>LifeSim — シルエット肖像 試作</title>
+
+<style>
+:root{
+  --ground:#f5f2f0; --card:#ffffff; --ink:#1a1520; --ink-2:#665d70;
+  --ink-3:#9a91a4; --line:#e4dedd; --accent:#a9691f; --accent-soft:#f0e2cd;
+  --mono:"SFMono-Regular",Consolas,"Liberation Mono",monospace;
+  --gothic:"Yu Gothic UI","Yu Gothic","Hiragino Sans","Noto Sans JP",system-ui,sans-serif;
+  --mincho:"Yu Mincho","YuMincho","Hiragino Mincho ProN","Noto Serif JP",serif;
+}
+@media (prefers-color-scheme: dark){
+  :root{ --ground:#121016; --card:#1a1620; --ink:#ece7f1; --ink-2:#9b93a6;
+    --ink-3:#6d6579; --line:#2b2534; --accent:#dda352; --accent-soft:#33291c; }
+}
+:root[data-theme="dark"]{
+  --ground:#121016; --card:#1a1620; --ink:#ece7f1; --ink-2:#9b93a6;
+  --ink-3:#6d6579; --line:#2b2534; --accent:#dda352; --accent-soft:#33291c;
+}
+:root[data-theme="light"]{
+  --ground:#f5f2f0; --card:#ffffff; --ink:#1a1520; --ink-2:#665d70;
+  --ink-3:#9a91a4; --line:#e4dedd; --accent:#a9691f; --accent-soft:#f0e2cd;
+}
+
+*{box-sizing:border-box}
+body{margin:0; background:var(--ground); color:var(--ink); font-family:var(--gothic);
+  line-height:1.75; -webkit-font-smoothing:antialiased}
+.wrap{max-width:1140px; margin:0 auto; padding:clamp(28px,5vw,64px) clamp(18px,4vw,40px) 96px;
+  display:flex; flex-direction:column; gap:clamp(30px,5vw,52px)}
+
+.masthead{display:flex; flex-direction:column; gap:10px}
+.eyebrow{margin:0; font-size:11.5px; letter-spacing:.22em; text-transform:uppercase;
+  color:var(--ink-3); font-weight:600}
+h1{margin:0; font-family:var(--mincho); font-weight:600; font-size:clamp(28px,4.4vw,44px);
+  line-height:1.25; letter-spacing:.02em; text-wrap:balance}
+.lede{margin:0; color:var(--ink-2); font-size:clamp(14px,1.6vw,16.5px); max-width:62ch}
+.lede b{color:var(--ink); font-weight:600}
+
+section{display:flex; flex-direction:column; gap:clamp(14px,2vw,20px)}
+.shead{display:flex; flex-direction:column; gap:6px}
+h2{margin:0; font-family:var(--mincho); font-size:clamp(19px,2.3vw,24px); font-weight:600;
+  letter-spacing:.02em}
+.q{margin:0; font-size:14px; color:var(--ink-2); max-width:62ch}
+.q b{color:var(--ink); font-weight:600}
+
+/* ---------- 1. スロット一覧 ---------- */
+.roster{display:grid; gap:14px; grid-template-columns:repeat(auto-fit,minmax(158px,1fr))}
+.slot{
+  background:#100d15; border-radius:5px; overflow:hidden; position:relative;
+  display:flex; flex-direction:column; border:1px solid rgba(255,255,255,.06);
+}
+.slot .art{position:relative; aspect-ratio:5/6}
+.slot .art svg{position:absolute; inset:0; width:100%; height:100%}
+.slot .halo{position:absolute; inset:0; pointer-events:none}
+.slot .cap{padding:10px 12px 12px; border-top:1px solid rgba(255,255,255,.07);
+  display:flex; flex-direction:column; gap:2px; background:#0c0a10}
+.slot .nm{font-size:13.5px; color:#efe9f2; letter-spacing:.06em}
+.slot .ns{font-size:11px; color:#8a8296; letter-spacing:.1em; font-family:var(--mono)}
+
+/* ---------- 2. 会話シーン ---------- */
+.stage{position:relative; width:100%; aspect-ratio:16/9; container-type:size;
+  border-radius:6px; overflow:hidden; background:#0a070d; isolation:isolate;
+  box-shadow:0 24px 60px -30px rgba(20,10,30,.55), 0 0 0 1px rgba(0,0,0,.32)}
+.stage .bg{position:absolute; inset:0; transition:background .6s ease}
+.stage .fig{position:absolute; right:4cqw; bottom:-3cqh; height:104cqh; aspect-ratio:300/380;
+  transition:transform .5s cubic-bezier(.2,.8,.3,1), opacity .5s ease}
+.stage .fig svg{width:100%; height:100%}
+.stage .vig{position:absolute; inset:0; pointer-events:none;
+  background:radial-gradient(115% 92% at 42% 40%, transparent 30%, rgba(4,2,8,.74) 100%)}
+.stage .scrim{position:absolute; inset:0; pointer-events:none;
+  background:linear-gradient(to top, rgba(6,3,10,.94) 0%, rgba(6,3,10,.78) 22%, rgba(6,3,10,.2) 46%, transparent 62%)}
+.stage .grain{position:absolute; inset:0; pointer-events:none; opacity:.085; mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/></filter><rect width='160' height='160' filter='url(%23n)'/></svg>");
+  background-size:180px 180px}
+
+.stage .who{position:absolute; top:3.4cqw; left:4cqw; display:flex; align-items:center; gap:1cqw;
+  color:#efe7f0; text-shadow:0 1px 8px rgba(0,0,0,.9)}
+.stage .who .n{font-size:1.55cqw; letter-spacing:.18em}
+.stage .pips{display:flex; gap:.34cqw}
+.stage .pip{width:.66cqw; height:.66cqw; border-radius:50%; background:rgba(255,255,255,.2);
+  transition:background .45s ease}
+.stage .band{font-size:1.2cqw; letter-spacing:.14em; opacity:.68; margin-left:.6cqw}
+
+.stage .script{position:absolute; left:0; right:34cqw; bottom:0; padding:0 0 4.6cqh 4cqw;
+  display:flex; flex-direction:column; gap:1.4cqh}
+.stage .slug{font-size:1.18cqw; letter-spacing:.24em; color:#d8b98a; opacity:.9}
+.stage .body{margin:0; font-family:var(--mincho); font-size:1.95cqw; line-height:1.95;
+  letter-spacing:.045em; color:#f4eee6; white-space:pre-wrap; min-height:7.6cqh;
+  text-shadow:0 2px 14px rgba(0,0,0,.92), 0 0 30px rgba(0,0,0,.55)}
+
+.controls{display:flex; flex-wrap:wrap; gap:18px; align-items:center;
+  background:var(--card); border:1px solid var(--line); border-radius:4px; padding:16px 20px}
+.ctl{display:flex; align-items:center; gap:11px}
+.ctl label{font-size:12px; letter-spacing:.14em; color:var(--ink-3); white-space:nowrap}
+input[type=range]{width:clamp(140px,26vw,260px); accent-color:var(--accent)}
+.val{font-family:var(--mono); font-size:13px; color:var(--ink); min-width:2.4em;
+  font-variant-numeric:tabular-nums; text-align:right}
+.seg{display:flex; border:1px solid var(--line); border-radius:3px; overflow:hidden}
+.seg button{appearance:none; font:inherit; font-size:13px; padding:7px 15px; cursor:pointer;
+  background:var(--card); color:var(--ink-2); border:0; letter-spacing:.05em;
+  transition:background .18s ease, color .18s ease}
+.seg button + button{border-left:1px solid var(--line)}
+.seg button[aria-pressed="true"]{background:var(--accent); color:#fff; font-weight:600}
+.seg button:focus-visible{outline:2px solid var(--accent); outline-offset:-2px}
+
+/* ---------- 3. 加齢 ---------- */
+.life{display:grid; gap:12px; grid-template-columns:repeat(auto-fit,minmax(132px,1fr))}
+.yr{background:#100d15; border:1px solid rgba(255,255,255,.06); border-radius:5px;
+  overflow:hidden; display:flex; flex-direction:column}
+.yr .art{position:relative; aspect-ratio:5/6}
+.yr .art svg{position:absolute; inset:0; width:100%; height:100%}
+.yr .cap{padding:9px 11px 11px; background:#0c0a10; border-top:1px solid rgba(255,255,255,.07);
+  display:flex; flex-direction:column; gap:1px}
+.yr .a{font-size:13px; color:#efe9f2; font-variant-numeric:tabular-nums; letter-spacing:.04em}
+.yr .b{font-size:11px; color:#847c90; letter-spacing:.06em}
+
+/* ---------- notes ---------- */
+.notes{display:grid; gap:clamp(18px,2.4vw,26px); grid-template-columns:repeat(auto-fit,minmax(266px,1fr))}
+.note{background:var(--card); border:1px solid var(--line); border-radius:4px;
+  padding:22px 24px 24px; display:flex; flex-direction:column; gap:11px}
+.note h3{margin:0; font-size:11.5px; letter-spacing:.2em; text-transform:uppercase;
+  color:var(--accent); font-weight:700}
+.note p{margin:0; font-size:14px; color:var(--ink-2); line-height:1.85}
+.note p b{color:var(--ink); font-weight:600}
+.note ul{margin:0; padding-left:0; list-style:none; display:flex; flex-direction:column; gap:7px}
+.note li{font-size:13.5px; color:var(--ink-2); display:flex; gap:10px; line-height:1.6}
+.note li::before{content:""; flex:none; width:5px; height:5px; border-radius:50%;
+  background:var(--accent); opacity:.55; margin-top:9px}
+.note li b{color:var(--ink); font-weight:600}
+code{font-family:var(--mono); font-size:.88em; background:var(--accent-soft);
+  padding:1.5px 5px; border-radius:2px; color:var(--ink)}
+.foot{font-size:12.5px; color:var(--ink-3); border-top:1px solid var(--line); padding-top:18px}
+
+@media (prefers-reduced-motion: reduce){
+  *{animation-duration:.01ms !important; transition-duration:.01ms !important}
+}
+@media (max-width:640px){ .stage{aspect-ratio:4/3} .stage .script{right:26cqw} }
+</style>
+
+<div class="wrap">
+
+  <header class="masthead">
+    <p class="eyebrow">LifeSim ／ 演出試作 その2 ／ 2026-07-27</p>
+    <h1>シルエット肖像</h1>
+    <p class="lede">顔は描かない。髪の輪郭・体格・小物・その人の色だけで<b>誰なのかを見分けさせる</b>。画像ファイルは0枚で、6人ぶんの見た目は1つの関数に引数を変えて渡しているだけ。判断してほしいのは一点、<b>これが愛着のとっかかりになるか</b>。</p>
+  </header>
+
+  <section>
+    <div class="shead">
+      <h2>その一　六人を見分けられるか</h2>
+      <p class="q">状態モデルで用意した6スロット。顔がなくても<b>誰が誰か分かるか</b>——分かるなら、シルエットは識別子として機能している。</p>
+    </div>
+    <div class="roster" id="roster"></div>
+  </section>
+
+  <section>
+    <div class="shead">
+      <h2>その二　関係値が見た目に出るか</h2>
+      <p class="q">同じ人物・同じ場面でも、関係値で<b>光の当たり方・距離・姿勢・そして本文</b>が変わる。スライダーを端から端まで動かしてみてほしい。ここが「薄化粧で終わるか、state連動で刺さるか」の分かれ目。</p>
+    </div>
+
+    <div class="stage" id="stage">
+      <div class="bg" id="bg"></div>
+      <div class="fig" id="fig"></div>
+      <div class="vig"></div>
+      <div class="scrim"></div>
+      <div class="grain"></div>
+      <div class="who">
+        <span class="n" id="whoName">母</span>
+        <span class="pips" id="pips"></span>
+        <span class="band" id="band">普通</span>
+      </div>
+      <div class="script">
+        <div class="slug" id="slug"></div>
+        <p class="body" id="body"></p>
+      </div>
+    </div>
+
+    <div class="controls">
+      <div class="ctl">
+        <label for="aff">関係値</label>
+        <input type="range" id="aff" min="0" max="100" value="50">
+        <span class="val" id="affVal">50</span>
+      </div>
+      <div class="ctl">
+        <label>場面</label>
+        <div class="seg" id="sceneSeg">
+          <button data-scene="0" aria-pressed="true">母・病室</button>
+          <button data-scene="1" aria-pressed="false">親友・同窓会</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="shead">
+      <h2>その三　同じ人が歳をとる</h2>
+      <p class="q">母ひとりを、プレイヤーの人生に沿って並べたもの。<b>この5枚は同じ関数に <code>age</code> を渡しただけ</b>——描き分けの手間はゼロ。人生シムで愛着が生まれるとしたら、いちばん効くのはたぶんこれ。</p>
+    </div>
+    <div class="life" id="life"></div>
+  </section>
+
+  <section class="notes">
+    <div class="note">
+      <h3>この試作が答えていること</h3>
+      <p>愛着の本体は<b>状態モデルと本文</b>のほうにある。肖像がやっているのは「誰の話か」を一目で示すことと、関係値を目に見える形にすることだけ。</p>
+      <p>だから顔が要らない。逆に、顔がないぶん<b>その人の顔は読み手が決められる</b>——小説と同じ作りかたになる。</p>
+    </div>
+    <div class="note">
+      <h3>部品の内訳</h3>
+      <ul>
+        <li><b>胸像1関数</b> — 頭・首・肩。<code>age</code> で猫背と首の縮みが進む</li>
+        <li><b>髪型6種</b> — ここが識別のほぼすべて。加齢で量が減る</li>
+        <li><b>小物5種</b> — 眼鏡・ヘッドホン・エプロン紐・ネクタイ・ピアス</li>
+        <li><b>その人の色</b> — 縁光に乗る。関係値が低いと灰青へ抜ける</li>
+        <li><b>関係値の写像</b> — 縁光の強さ／距離／傾き／彩度、の4つだけ</li>
+      </ul>
+      <p>7人目が要るときに増えるのは<b>髪型1つと色1つ</b>。イベントを何本足しても増えない。</p>
+    </div>
+    <div class="note">
+      <h3>まだ決めていないこと</h3>
+      <p>ドット絵のポートレートが欲しくなったら、<b>この層をそっくり差し替えれば済む</b>。状態モデルもstoryletも表現方法を知らないので、手戻りはない。</p>
+      <p>つまりこの判断は今しなくていい。今決めるべきなのは「顔を描かない方向で進めてみるか」だけ。</p>
+    </div>
+  </section>
+
+  <p class="foot">画像・フォント・音声ファイルはいずれも不使用。この画面のすべては実行時にコードが描いている。</p>
+
+</div>
+
+<script>
+"use strict";
+
+/* ============================================================
+   胸像キット — 6人ぶんの見た目はこの1関数の引数違い
+   ============================================================ */
+
+const CX = 150;
+
+/* 関係値 → 見た目。写像はこの4つだけ */
+function affinityLook(a, color){
+  const t = Math.max(0, Math.min(1, a / 100));
+  const cold = [90, 102, 122];                       // 疎遠のときに寄る灰青
+  const warm = hexToRgb(color);
+  const rim  = warm.map((c, i) => Math.round(cold[i] + (c - cold[i]) * (0.25 + t * 0.75)));
+  return {
+    rimColor: `rgb(${rim.join(',')})`,
+    rimA:  0.13 + t * 0.72,          // 縁光の強さ
+    tilt:  (t - 0.5) * 7,            // 近いと寄る、遠いと引く
+    scale: 0.955 + t * 0.075,        // 距離
+    fill:  t < .35 ? '#0a0810' : '#0c0912',
+  };
+}
+function hexToRgb(h){
+  return [1,3,5].map(i => parseInt(h.slice(i, i+2), 16));
+}
+
+/* 髪型 — 識別のほぼすべて。v は量(0.4〜1)、加齢で減る */
+const HAIR = {
+  /* ボブ（母）*/
+  bob(x, y, v){
+    const w = 52 + 8*v, h = 60 + 12*v;
+    return `M ${x-w-4} ${y+h*0.56}
+      C ${x-w-9} ${y-h*0.30} ${x-w*0.82} ${y-h*1.10} ${x} ${y-h*1.10}
+      C ${x+w*0.82} ${y-h*1.10} ${x+w+9} ${y-h*0.30} ${x+w+4} ${y+h*0.56}
+      C ${x+w*0.88} ${y+h*0.22} ${x+w*0.84} ${y-h*0.42} ${x} ${y-h*0.45}
+      C ${x-w*0.84} ${y-h*0.42} ${x-w*0.88} ${y+h*0.22} ${x-w-4} ${y+h*0.56} Z`;
+  },
+  /* 後退した薄毛（父）*/
+  thin(x, y, v){
+    const w = 50, r = 22 - v*10;      // v が小さいほど後退
+    return `M ${x-w} ${y-4}
+      C ${x-w-4} ${y-40} ${x-30-r*0.4} ${y-56-v*6} ${x} ${y-54-v*8}
+      C ${x+30+r*0.4} ${y-56-v*6} ${x+w+4} ${y-40} ${x+w} ${y-4}
+      C ${x+w-6} ${y-24} ${x+r+8} ${y-30-v*4} ${x} ${y-29-v*5}
+      C ${x-r-8} ${y-30-v*4} ${x-w+6} ${y-24} ${x-w} ${y-4} Z`;
+  },
+  /* 跳ねた短髪（親友）*/
+  messy(x, y, v){
+    const pk = [];
+    const n = 7, w = 56;
+    for (let i = 0; i <= n; i++){
+      const px = x - w + (2*w) * (i/n);
+      const base = y - 52 + Math.pow((px-x)/w, 2) * 22;
+      pk.push(`L ${px - 5} ${base}`);
+      pk.push(`L ${px + 1} ${base - (10 + (i%3)*9) * v}`);
+    }
+    return `M ${x-w-2} ${y+8} L ${x-w-2} ${y-30} ${pk.join(' ')} L ${x+w+2} ${y-30} L ${x+w+2} ${y+8}
+      C ${x+w-4} ${y-16} ${x+40} ${y-26} ${x} ${y-27}
+      C ${x-40} ${y-26} ${x-w+4} ${y-16} ${x-w-2} ${y+8} Z`;
+  },
+  /* 長い髪（恋人）*/
+  long(x, y, v){
+    const w = 54 + 6*v;
+    return `M ${x-w} ${y+186}
+      C ${x-w-20} ${y+70} ${x-w-10} ${y-34} ${x} ${y-66-6*v}
+      C ${x+w+10} ${y-34} ${x+w+20} ${y+70} ${x+w} ${y+186}
+      C ${x+w-18} ${y+96} ${x+w-10} ${y-14} ${x} ${y-28}
+      C ${x-w+10} ${y-14} ${x-w+18} ${y+96} ${x-w} ${y+186} Z`;
+  },
+  /* 撫でつけた髪（ライバル）*/
+  slick(x, y, v){
+    const w = 52;
+    return `M ${x-w-2} ${y+14}
+      L ${x-w-6} ${y-34}
+      L ${x-16} ${y-62-8*v}
+      L ${x+w+6} ${y-46}
+      L ${x+w+2} ${y+6}
+      C ${x+w-8} ${y-18} ${x+30} ${y-30} ${x-4} ${y-30}
+      C ${x-34} ${y-29} ${x-w+6} ${y-14} ${x-w-2} ${y+14} Z`;
+  },
+  /* やわらかい丸（子）*/
+  round(x, y, v){
+    const w = 56 + 6*v;
+    return `M ${x-w} ${y+16}
+      C ${x-w-6} ${y-40} ${x-38} ${y-74} ${x} ${y-74}
+      C ${x+38} ${y-74} ${x+w+6} ${y-40} ${x+w} ${y+16}
+      C ${x+w-12} ${y-14} ${x+36} ${y-32} ${x} ${y-32}
+      C ${x-36} ${y-32} ${x-w+12} ${y-14} ${x-w} ${y+16} Z`;
+  },
+};
+
+/* 小物 — 縁光の色を借りるので、関係値が上がると小物も温まる */
+const PROP = {
+  glasses(x, y, c, a){
+    const r = 21;
+    return `<g fill="none" stroke="${c}" stroke-width="3.4" opacity="${(a*0.85+0.16).toFixed(2)}">
+      <rect x="${x-r-22}" y="${y-14}" width="${r*2}" height="${r*1.55}" rx="7"/>
+      <rect x="${x+22-r}" y="${y-14}" width="${r*2}" height="${r*1.55}" rx="7"/>
+      <path d="M ${x-8} ${y-4} Q ${x} ${y-9} ${x+8} ${y-4}"/>
+    </g>`;
+  },
+  headphones(x, y, c, a){
+    return `<g opacity="${(a*0.8+0.18).toFixed(2)}">
+      <path d="M ${x-62} ${y+26} C ${x-66} ${y-52} ${x+66} ${y-52} ${x+62} ${y+26}"
+        fill="none" stroke="${c}" stroke-width="6"/>
+      <rect x="${x-72}" y="${y+16}" width="20" height="34" rx="8" fill="${c}"/>
+      <rect x="${x+52}" y="${y+16}" width="20" height="34" rx="8" fill="${c}"/>
+    </g>`;
+  },
+  apron(x, y, c, a){
+    return `<g opacity="${(a*0.62+0.14).toFixed(2)}" stroke="${c}" stroke-width="5" fill="none">
+      <path d="M ${x-52} ${y+128} L ${x-22} ${y+42}"/>
+      <path d="M ${x+52} ${y+128} L ${x+22} ${y+42}"/>
+    </g>`;
+  },
+  tie(x, y, c, a){
+    return `<g opacity="${(a*0.7+0.16).toFixed(2)}">
+      <path d="M ${x-20} ${y+34} L ${x} ${y+52} L ${x+20} ${y+34} L ${x+11} ${y+30}
+        L ${x} ${y+38} L ${x-11} ${y+30} Z" fill="${c}"/>
+      <path d="M ${x-9} ${y+54} L ${x+9} ${y+54} L ${x+13} ${y+128} L ${x} ${y+142}
+        L ${x-13} ${y+128} Z" fill="${c}"/>
+    </g>`;
+  },
+  earring(x, y, c, a){
+    return `<circle cx="${x+47}" cy="${y+34}" r="5.4" fill="${c}"
+      opacity="${(a*0.9+0.2).toFixed(2)}"/>`;
+  },
+};
+
+/* 胸像本体 */
+function bust(o){
+  const age  = Math.max(0, Math.min(1, o.age ?? .3));
+  const look = affinityLook(o.affinity ?? 50, o.color);
+  const kid  = o.kid ? 0.82 : 1;                    // 子どもは頭身が低い
+
+  const stoop = age * 34;                            // 猫背
+  const hy    = 132 + age * 7;                       // 頭の位置
+  const topY  = 210 + age * 9;                       // 肩の付け根
+  const sw    = (124 * (o.build ?? 1)) * (o.kid ? .84 : 1);
+  const hv    = (o.kid ? 1 : 1 - age * 0.55);        // 髪の量
+
+  const body = `M ${CX-sw} 380
+    C ${CX-sw} ${292+stoop} ${CX-74} ${topY+8} ${CX-29} ${topY}
+    L ${CX+29} ${topY}
+    C ${CX+74} ${topY+8} ${CX+sw} ${292+stoop} ${CX+sw} 380 Z`;
+  const neck = `<rect x="${CX-18}" y="${hy+38}" width="36" height="${topY-hy-34-age*9}" rx="4"/>`;
+  const head = `<ellipse cx="${CX}" cy="${hy}" rx="${50*kid}" ry="${58*kid}"/>`;
+  const hair = `<path d="${(HAIR[o.hair] || HAIR.round)(CX, hy, hv)}"/>`;
+
+  const shape = `${hair}<path d="${body}"/>${neck}${head}`;
+  const props = (o.props || []).map(p =>
+    PROP[p] ? PROP[p](CX, hy, look.rimColor, look.rimA) : '').join('');
+
+  const g = `translate(${CX},${190}) rotate(${look.tilt.toFixed(2)})
+             scale(${look.scale.toFixed(3)}) translate(${-CX},${-190})`;
+
+  return `<svg viewBox="0 0 300 380" preserveAspectRatio="xMidYMax meet">
+    <defs>
+      <filter id="sf" x="-50%" y="-50%" width="200%" height="200%">
+        <feGaussianBlur stdDeviation="9"/></filter>
+    </defs>
+    <g transform="${g}">
+      <g transform="translate(9,-7)" fill="${look.rimColor}"
+         opacity="${look.rimA.toFixed(2)}" filter="url(#sf)">${shape}</g>
+      <g transform="translate(7,-5)" fill="${look.rimColor}"
+         opacity="${(look.rimA*0.9).toFixed(2)}">${shape}</g>
+      <g fill="${look.fill}">${shape}</g>
+      ${props}
+    </g>
+  </svg>`;
+}
+
+/* ============================================================
+   6スロット
+   ============================================================ */
+
+const CAST = {
+  mother:  { name:'母',       slug:'relations.mother',        hair:'bob',   props:['apron'],       color:'#e8a866', age:.55, build:.92 },
+  father:  { name:'父',       slug:'relations.father',        hair:'thin',  props:['glasses'],     color:'#7b93b0', age:.62, build:1.12 },
+  friend:  { name:'親友・ケン', slug:'relations.best_friend',   hair:'messy', props:['headphones'],  color:'#a8c471', age:.28, build:1.02 },
+  lover:   { name:'恋人',     slug:'relations.lover',         hair:'long',  props:['earring'],     color:'#e08a9a', age:.24, build:.9  },
+  rival:   { name:'ライバル',  slug:'relations.rival',         hair:'slick', props:['tie'],         color:'#8f8ad4', age:.34, build:1.08 },
+  child:   { name:'子',       slug:'relations.child',         hair:'round', props:[],              color:'#7fc9a8', age:.05, build:.86, kid:true },
+};
+
+const rosterEl = document.getElementById('roster');
+rosterEl.innerHTML = Object.values(CAST).map(c => `
+  <div class="slot">
+    <div class="art">
+      <div class="halo" style="background:radial-gradient(72% 58% at 50% 62%, ${c.color}1f, transparent 72%)"></div>
+      ${bust({...c, affinity:66})}
+    </div>
+    <div class="cap"><span class="nm">${c.name}</span><span class="ns">${c.slug}</span></div>
+  </div>`).join('');
+
+/* ============================================================
+   会話シーン — 関係値で本文まで変わる
+   ============================================================ */
+
+const SCENES = [
+  {
+    cast:'mother', age:.68,
+    slug:'総合病院 4F 東棟 ／ 44歳 冬',
+    bg:'linear-gradient(168deg, #1b2129 0%, #33404e 62%, #46545f 100%)',
+    bands:[
+      { max:33, label:'疎遠',
+        text:'「ああ、来たの」\n母はそれだけ言って、また窓のほうを向いた。\n十分ほど黙って座って、話すことが残っていないのだと気づく。' },
+      { max:66, label:'普通',
+        text:'「仕事は大丈夫なの」\n母が訊くのはいつもそれだ。大丈夫だよ、と答えるのが今日で三回目になる。\n点滴の落ちる音だけが、規則正しい。' },
+      { max:101, label:'親密',
+        text:'「あんた、疲れた顔してる」\n自分では気づいていなかった。この人はいつもこちらより先に気づく。\n点滴の落ちる音を聞きながら、しばらく手を握っていた。' },
+    ],
+  },
+  {
+    cast:'friend', age:.55,
+    slug:'同窓会・二次会 ／ 41歳 秋',
+    bg:'linear-gradient(160deg, #1a1220 0%, #35212a 58%, #472a24 100%)',
+    bands:[
+      { max:33, label:'疎遠',
+        text:'目が合って、会釈だけした。\n連絡先はもう残っていないな、と思い出す。\n座敷の反対側は、ずいぶん遠かった。' },
+      { max:66, label:'普通',
+        text:'「久しぶり」\n十年ぶんの空白を、当たり障りのない近況で埋めていく。\n悪くはない。ただ、昔ならこんな喋り方はしなかった。' },
+      { max:101, label:'親密',
+        text:'「おい、老けたな」\n開口一番それか、と笑ってしまった。\n十年空いても、こいつとは三秒で元に戻る。' },
+    ],
+  },
+];
+
+const $ = id => document.getElementById(id);
+let curScene = 0;
+
+function paintScene(){
+  const sc  = SCENES[curScene];
+  const c   = CAST[sc.cast];
+  const aff = +$('aff').value;
+  const band = sc.bands.find(b => aff < b.max);
+
+  $('bg').style.background = sc.bg;
+  $('fig').innerHTML = bust({...c, age: sc.age, affinity: aff });
+  $('whoName').textContent = c.name;
+  $('band').textContent = band.label;
+  $('slug').textContent = sc.slug;
+  $('body').textContent = band.text;
+  $('affVal').textContent = aff;
+
+  const lit = Math.round(aff / 20);
+  $('pips').innerHTML = [0,1,2,3,4].map(i =>
+    `<span class="pip" style="background:${i < lit ? c.color : 'rgba(255,255,255,.2)'}"></span>`
+  ).join('');
+}
+
+$('aff').addEventListener('input', paintScene);
+document.querySelectorAll('#sceneSeg button').forEach(b =>
+  b.addEventListener('click', () => {
+    curScene = +b.dataset.scene;
+    document.querySelectorAll('#sceneSeg button').forEach(o =>
+      o.setAttribute('aria-pressed', String(o === b)));
+    paintScene();
+  }));
+paintScene();
+
+/* ============================================================
+   加齢 — 同じ引数に age を変えて渡すだけ
+   ============================================================ */
+
+const LIFE = [
+  { age:.10, a:'28歳', b:'あなたは0歳',  aff:88, props:['apron'] },
+  { age:.32, a:'40歳', b:'あなたは12歳', aff:78, props:['apron'] },
+  { age:.54, a:'52歳', b:'あなたは24歳', aff:62, props:['apron'] },
+  { age:.74, a:'64歳', b:'あなたは36歳', aff:70, props:['apron','glasses'] },
+  { age:.95, a:'76歳', b:'あなたは48歳', aff:80, props:['apron','glasses'] },
+];
+
+$('life').innerHTML = LIFE.map(s => `
+  <div class="yr">
+    <div class="art">
+      <div class="halo" style="position:absolute;inset:0;background:radial-gradient(72% 58% at 50% 62%, #e8a8661c, transparent 72%)"></div>
+      ${bust({ ...CAST.mother, props: s.props, age: s.age, affinity: s.aff })}
+    </div>
+    <div class="cap"><span class="a">母 ${s.a}</span><span class="b">${s.b}</span></div>
+  </div>`).join('');
+</script>

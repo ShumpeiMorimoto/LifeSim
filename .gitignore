@@ -2,6 +2,15 @@
 .env
 .env.*
 *.key
+*.pem
+credentials.json
+service-account*.json
+
+# MCP 設定はAPIトークンを含みうるのでコミットしない（各自で作成する）
+.mcp.json
+
+# Claude Code: settings.json は共有、settings.local.json は個人設定
+.claude/settings.local.json
 
 # Python
 __pycache__/
